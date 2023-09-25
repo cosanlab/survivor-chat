@@ -1,0 +1,38 @@
+{
+  "name": "survivor-chat",
+  "version": "1.0.0",
+  "description": "",
+  "private": true,
+  "main": "server.js",
+  "scripts": {
+    "dev": "nodemon server",
+    "build-client": "cd client && npm run build",
+    "build-server": "npm install && node server.js",
+    "start": "npm run build-client && npm run build-server"
+  },
+  "engines": {
+    "node": "16.13.x"
+  },
+  "nodemonConfig": {
+    "ignore": [
+      "client/*"
+    ]
+  },
+  "keywords": [],
+  "author": "Wasita",
+  "license": "MIT",
+  "dependencies": {
+    "concurrently": "^6.2.0",
+    "dotenv": "^10.0.0",
+    "express": "^4.17.2",
+    "firebase": "^9.7.0",
+    "firebase-admin": "^7.0.0",
+    "nodemon": "^2.0.7",
+    "rollup-plugin-npm": "^2.0.0",
+    "sirv": "^1.0.12",
+    "sirv-cli": "^1.0.0",
+    "socket.io": "^4.4.1",
+    "socket.io-client": "^4.1.2",
+    "unique-names-generator": "^4.7.1"
+  }
+}
