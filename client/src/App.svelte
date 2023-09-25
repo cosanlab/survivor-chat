@@ -12,10 +12,10 @@
     userStore,
     updateUser,
   } from "./utils.js";
-  import Instructions from "./pages/Instructions.svelte";
-  import Quiz from "./pages/Quiz.svelte";
+
+  // Pages we can 'route' to:
   import Consent from "./pages/Consent.svelte";
-  import BotCheck from "./pages/BotCheck.svelte";
+  import Instructions from "./pages/Instructions.svelte";
   import WaitingRoom from "./pages/WaitingRoom.svelte";
   import CountdownTransition from "./pages/CountdownTransition.svelte";
   import Experiment from "./pages/Experiment.svelte";
@@ -222,26 +222,16 @@
     </p>
   {:else if $userStore.currentState === "consent"}
     <Consent
-      on:consent={() => updateState("botCheck")}
+      on:consent={() => updateState("instructions")}
       on:reject={() => updateState("noConsent")}
     />
-  {:else if $userStore.currentState === "botCheck"}
-    <BotCheck
-      on:finished={() => updateState("vidCheck")}
-      on:failed={() => updateState("debrief")}
-    />
-  {:else if $userStore.currentState === "vidCheck"}
-    <VidCheck
-      on:finished={() => updateState("instructions")}
-      on:failed={() => updateState("noConsent")}
-    />
+  {:else if $userStore.currentState === "instructions"}
+    <Instructions on:finished={() => updateState("waiting-room")} />
   {:else if $userStore.currentState === "waiting-room"}
     <WaitingRoom
       on:finished={() => updateState("countdown-transition")}
       on:failed={() => updateState("matchFail")}
     />
-  {:else if $userStore.currentState === "instructions"}
-    <Instructions on:finished={() => updateState("waiting-room")} />
   {:else if $userStore.currentState === "countdown-transition"}
     <CountdownTransition on:finished={() => updateState("experiment")} />
   {:else if $userStore.currentState === "experiment"}
