@@ -1,0 +1,18 @@
+.gitattributes
+*node_modules/
+
+# just mac OS things
+.DS_Store
+
+# pre-req: dotenv package
+.env
+
+# firebase things
+.firebaserc
+firebase-debug.log
+# firebase.json
+.firebase
+
+.github/workflows/firebase-hosting-pull-request.yml
+.github/workflows/firebase-hosting-merge.yml
+ServiceAccountKey.json
