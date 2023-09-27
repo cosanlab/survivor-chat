@@ -50,6 +50,13 @@ also makes use of the Loading component-->
   };
   console.log("hlsConfig", hlsConfig);
 
+  // video URLs that are hosted on AWS S3
+  let debugVidURL =
+    "https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/misc/Stream1.m3u8";
+  let expVidURL =
+    "https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/tv.11516.S28E1.1080p.H264.20200815180824.mp4";
+  // let videoURL = expConfig.debugMode ? debugVidURL : expVidURL;
+
   let player;
   let paused = DEV_MODE ? true : false;
   let time = 0;
@@ -58,15 +65,6 @@ also makes use of the Loading component-->
     time = event.detail;
     // console.log("onTimeUpdate", time);
   };
-
-  let vidCond = $userStore.condition;
-
-  if (vidCond === 1) {
-    vidCond = "natalie";
-  } else if (vidCond === 2) {
-    vidCond = "shaina";
-  }
-  console.log("vidCond -->", vidCond);
 
   // video controls
   // can determine whether user can control video or not
@@ -451,10 +449,7 @@ also makes use of the Loading component-->
       >
         <!-- svelte-ignore a11y-media-has-caption -->
         <Hls version="latest" config={hlsConfig}>
-          <source
-            data-src="https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/misc/Stream1.m3u8"
-            type="application/x-mpegURL"
-          />
+          <source data-src={debugVidURL} type="application/x-mpegURL" />
         </Hls>
 
         <DefaultUi noControls noClickToPlay noDblClickFullscreen>
@@ -482,10 +477,7 @@ also makes use of the Loading component-->
       >
         <!-- svelte-ignore a11y-media-has-caption -->
         <Hls version="latest" config={hlsConfig}>
-          <source
-            data-src="https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/misc/Stream1.m3u8"
-            type="application/x-mpegURL"
-          />
+          <source data-src={debugVidURL} type="application/x-mpegURL" />
         </Hls>
 
         <DefaultUi noControls noClickToPlay noDblClickFullscreen>
@@ -502,7 +494,7 @@ also makes use of the Loading component-->
         </DefaultUi>
       </Player>
     {/if}
-  {:else if vidCond === "natalie"}
+  {:else}
     <Player
       autoplay
       playsinline
@@ -515,43 +507,7 @@ also makes use of the Loading component-->
     >
       <!-- svelte-ignore a11y-media-has-caption -->
       <Hls version="latest" config={hlsConfig}>
-        <source
-          data-src="https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/hls/natalie-sequence-720p.m3u8"
-          type="application/x-mpegURL"
-        />
-      </Hls>
-
-      <DefaultUi noControls noClickToPlay noDblClickFullscreen>
-        <Scrim />
-        <Controls fullWidth pin="topLeft">
-          <ControlSpacer />
-          <MuteControl />
-        </Controls>
-        <ControlSpacer />
-        <Controls fullWidth pin="bottomRight">
-          <ControlSpacer />
-          <TimeProgress />
-        </Controls>
-      </DefaultUi>
-    </Player>
-  {:else if vidCond === "shaina"}
-    <!-- shaina trajectory -->
-    <Player
-      autoplay
-      playsinline
-      bind:this={player}
-      muted={true}
-      bind:paused
-      bind:currentTime={time}
-      on:vmCurrentTimeChange={onTimeUpdate}
-      on:vmPlaybackEnded={handleEnd}
-    >
-      <!-- svelte-ignore a11y-media-has-caption -->
-      <Hls version="latest" config={hlsConfig}>
-        <source
-          data-src="https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/hls/shaina-sequence-720p.m3u8"
-          type="application/x-mpegURL"
-        />
+        <source data-src={expVidURL} type="application/x-mpegURL" />
       </Hls>
 
       <DefaultUi noControls noClickToPlay noDblClickFullscreen>
