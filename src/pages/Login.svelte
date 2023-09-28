@@ -1,3 +1,13 @@
+<!-- Login.svelte
+
+This is the first page that a participant sees.
+It asks them to select their Group and Name/NetID.render
+
+[x] TODO: Add a dropdown for Group ID
+[x] TODO: Add a textbox for Name/NetID
+
+-->
+
 <script>
   import {
     getAuth,
@@ -14,29 +24,14 @@
   } from "../utils";
   import Button from "../components/Button.svelte";
 
-  let name, subId, role, loginError;
-  const groupId = 0;
+  let netId, subId, groupId, loginError;
   const password = "cosanlab";
 
-  // Sets SID based on role
-  function setSubId() {
-    if (role === "investor") {
-      subId = 0;
-    } else {
-      subId = 1;
-    }
-  }
-
-  async function login() {
+  const login = async () => {
     console.log(name);
-    setSubId();
     const auth = getAuth();
     // Convert their text input to NNN_NNN_role format
-    let { groupId_f, subId_f, role_f, userId_f } = formatUserId(
-      groupId,
-      subId,
-      role
-    );
+    let { groupId_f, subId_f, role_f, userId_f } = formatUserId(groupId, subId);
     let email = `${groupId_f}_${subId_f}_${role_f}@experiment.com`;
     // The unique userId for any specific participant is a concatentation of their
     // groupId_subjectId_role
@@ -62,8 +57,55 @@
         console.error(error);
       }
     }
-  }
+  };
 </script>
+
+<div class="w-full max-w-md mb-6">
+  <form
+    class="px-8 pt-6 pb-8 mb-4 bg-white rounded shadow-md"
+    on:submit|preventDefault={login}
+  >
+    <div class="mb-4">
+      <label for="groupId" class="mb-2 text-sm font-bold text-gray-700"
+        >Group</label
+      >
+      <select
+        id="groupId"
+        name="groupId"
+        bind:value={groupId}
+        class="w-full px-3 py-2 leading-tight border rounded shadow focus:outline-none focus:shadow-outline"
+      >
+        <option value="">Select your group</option>
+        <option value="BBB">BBB</option>
+        <option value="DVBrainiac">DVBrainiac</option>
+        <option value="DEV">DEV</option>
+        <option value="EFD">EFD</option>
+        <option value="Freud's Favorites">Freud's Favorites</option>
+        <option value="Pavlov's Dawgs">Pavlov's Dawgs</option>
+        <option value="Psychiatric Trio">Psychiatric Trio</option>
+        <option value="Team Luke">Team Luke</option>
+        <option value="The Psychedelics">The Psychedelics</option>
+        <option value="The Unreasonable Ocho">The Unreasonable Ocho</option>
+      </select>
+    </div>
+
+    <div class="mb-4">
+      <label class="block mb-2 text-sm font-bold text-gray-700" for="name">
+        NetID
+      </label>
+      <input
+        class="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline"
+        id="name"
+        type="text"
+        placeholder="Type your NetID here"
+        bind:value={netId}
+      />
+    </div>
+    <div class="text-center">
+      <Button type={"submit"} color={"blue"}>Login</Button>
+    </div>
+  </form>
+</div>
 
 <style>
   li {
@@ -73,41 +115,3 @@
     @apply flex mb-2;
   }
 </style>
-
-<div class="w-full max-w-md mb-6">
-  <form
-    class="px-8 pt-6 pb-8 mb-4 bg-white rounded shadow-md"
-    on:submit|preventDefault={login}
-  >
-    <div class="mb-4">
-      <label for="roleId" class="mb-2 text-sm font-bold text-gray-700"
-        >Role</label
-      >
-      <select
-        id="roleId"
-        name="roleId"
-        bind:value={role}
-        class="w-full px-3 py-2 leading-tight border rounded shadow focus:outline-none focus:shadow-outline"
-      >
-        <option value="">Select the ROLE the experimenter gave you</option>
-        <option value="investor">Investor</option>
-        <option value="trustee">Trustee</option>
-      </select>
-    </div>
-    <div class="mb-4">
-      <label class="block mb-2 text-sm font-bold text-gray-700" for="name">
-        Name
-      </label>
-      <input
-        class="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline"
-        id="name"
-        type="text"
-        placeholder="Type your first name"
-        bind:value={name}
-      />
-    </div>
-    <div class="text-center">
-      <Button type={"submit"} color={"blue"}>Login</Button>
-    </div>
-  </form>
-</div>
