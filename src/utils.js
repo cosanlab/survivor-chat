@@ -13,12 +13,14 @@ import { writable, get } from 'svelte/store';
 
 // Copy and paste your firebase config here:
 const firebaseConfig = {
-  apiKey: "AIzaSyCUQMcJo6brxVX2Jf7r0Hublw7SyLj2xBY",
-  authDomain: "trust-game-844b3.firebaseapp.com",
-  projectId: "trust-game-844b3",
-  storageBucket: "trust-game-844b3.appspot.com",
-  messagingSenderId: "841005706064",
-  appId: "1:841005706064:web:3f33629cbe2594247e9a55"
+  apiKey: "AIzaSyDkdKO_KE0b2S6bg9CNH-yBGB-0Ph6GOXI",
+  authDomain: "svelte-vid-sync-chat-app.firebaseapp.com",
+  databaseURL: "https://svelte-vid-sync-chat-app-default-rtdb.firebaseio.com",
+  projectId: "svelte-vid-sync-chat-app",
+  storageBucket: "svelte-vid-sync-chat-app.appspot.com",
+  messagingSenderId: "847886552871",
+  appId: "1:847886552871:web:e858b721ad999f26696302",
+  measurementId: "G-CC4NVFPPX7"
 };
 
 // Initialize firebase

@@ -22,16 +22,20 @@
   // app pages and components
   import Login from "./pages/Login.svelte";
   import Instructions from "./pages/Instructions.svelte";
+
+  // Experiment phases - waiting for others in your group to join
   import Phase_01 from "./pages/Phase_01.svelte";
+
+  // Countdown to start of experiment
   import Phase_02 from "./pages/Phase_02.svelte";
+
+  // Experiment start -- video watching & chat room
   import Phase_03 from "./pages/Phase_03.svelte";
-  import Phase_04 from "./pages/Phase_04.svelte";
-  import Phase_05 from "./pages/Phase_05.svelte";
+
   import Debrief from "./pages/Debrief.svelte";
   import Loading from "./components/Loading.svelte";
   import Footer from "./components/Footer.svelte";
   import StatusHeader from "./components/StatusHeader.svelte";
-  import PhaseFixation from "./pages/Phase_Fixation.svelte";
 
   // VARIABLES USED WITHIN App.svelte
   let unsubscribe_user, unsubscribe_group;
