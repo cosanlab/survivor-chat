@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { initializeApp } from "firebase/app";
 import { getStorage } from "firebase/storage";
-import { getFirestore, doc, setDoc, updateDoc, runTransaction, serverTimestamp } from "firebase/firestore";
+import { getFirestore, doc, getDoc, updateDoc, setDoc, runTransaction, serverTimestamp } from "firebase/firestore";
 import { getAuth } from 'firebase/auth';
 import { writable, get } from 'svelte/store';
 
@@ -51,8 +51,8 @@ export const loggedIn = writable(false);
 export const userId = writable(null);
 // Store to control the UI for what state the experiment is in
 export const stateDisplay = writable([]);
-
-// TODO: function for generating trials and binding to reset group button
+// Store server time
+export const serverTime = serverTimestamp();
 
 // Add any global variables you want to use elsewhere in the app
 // Then use them in another file by importing:

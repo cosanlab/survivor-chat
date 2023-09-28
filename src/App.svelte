@@ -1,11 +1,6 @@
 <script>
   import { onAuthStateChanged } from "firebase/auth";
-  import {
-    doc,
-    updateDoc,
-    onSnapshot,
-    serverTimestamp,
-  } from "firebase/firestore";
+  import { doc, updateDoc, onSnapshot } from "firebase/firestore";
   import { onMount } from "svelte";
   import {
     auth,
@@ -17,6 +12,7 @@
     initUser,
     resetGroupData,
     reqStateChange,
+    serverTime,
   } from "./utils.js";
 
   // app pages and components
@@ -135,33 +131,24 @@ determine what page a user should be on. -->
 <main class="flex flex-col items-center h-screen p-10 space-y-10">
   {#if !$loggedIn}
     <Login />
-  {:else if !$groupStore || !$groupStore.currentState}
+  {:else if !$groupStore || !$groupStore["currentState"]}
     <Loading />
   {:else}
     <!-- Main experiment loop -->
-    {#if $groupStore.currentState !== "phase-fixation"}
-      <StatusHeader />
-    {/if}
-    {#if $groupStore.currentState === "instructions"}
+    {#if $groupStore["currentState"] === "instructions"}
       <Instructions on:to-phase-01={() => updateState("phase-01")} />
-    {:else if $groupStore.currentState === "phase-01"}
+    {:else if $groupStore["currentState"] === "phase-01"}
       <Phase_01 on:to-phase-02={() => updateState("phase-02")} />
-    {:else if $groupStore.currentState === "phase-02"}
+    {:else if $groupStore["currentState"] === "phase-02"}
       <Phase_02 on:to-phase-03={() => updateState("phase-03")} />
-    {:else if $groupStore.currentState === "phase-03"}
-      <Phase_03 on:to-phase-04={() => updateState("phase-04")} />
-    {:else if $groupStore.currentState === "phase-04"}
-      <Phase_04 on:to-phase-05={() => updateState("phase-05")} />
-    {:else if $groupStore.currentState === "phase-05"}
-      <Phase_05 on:to-phase-fixation={() => updateState("phase-fixation")} />
-    {:else if $groupStore.currentState === "phase-fixation"}
-      <PhaseFixation on:get-next-trial={getNextTrial} />
-    {:else if $groupStore.currentState === "debrief"}
+    {:else if $groupStore["currentState"] === "phase-03"}
+      <Phase_03 on:to-phase-04={() => updateState("debrief")} />
+    {:else if $groupStore["currentState"] === "debrief"}
       <Debrief />
     {/if}
   {/if}
 </main>
 
-{#if $groupStore.currentState !== "phase-fixation"}
+{#if $groupStore["currentState"] !== "phase-fixation"}
   <Footer on:resetGroup={resetGroupData} />
 {/if}
