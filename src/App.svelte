@@ -66,15 +66,9 @@
   // their UI at approx the same time as the other users.
   //
 
-  async function updateState(newState) {
+  const updateState = async (newState) => {
     await reqStateChange(newState);
-  }
-
-  // Gets called when user submits their APQ responses
-  async function getNextTrial() {
-    // The second argument here means also update the trial counter
-    await reqStateChange("phase-01", true);
-  }
+  };
 
   // When the app first starts up we check to see if the user is logged in and if they
   // aren't we set the value of the $loggedIn svelte store to false which takes them to
