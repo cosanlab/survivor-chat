@@ -8,39 +8,31 @@ was just created -->
   const dispatch = createEventDispatcher();
 
   // Change to your email
-  const email = "eshin.jolly@dartmouth.edu";
+  const email = "wasita.gr@dartmouth.edu";
 
-  async function logout() {
+  const logout = async () => {
     // Get the current auth status
     const auth = getAuth();
     try {
       await signOut(auth);
       // Delete the user Id from their computer so a new user can sign-in
-      localStorage.removeItem("userId");
+      localStorage.removeItem("netId");
       $userId = null;
       console.log("Sucessfully logged out of firebase");
     } catch (error) {
       console.error(error);
     }
-  }
+  };
 </script>
-
-<style>
-  .banner {
-    @apply flex justify-around text-center text-white fixed left-0 bottom-0 w-[100vw] p-2 font-bold;
-  }
-</style>
 
 <div
   class="banner"
   class:bg-red-600={import.meta.env.DEV}
   class:bg-gray-600={!import.meta.env.DEV}
 >
-  <div>If you have questions please ask the experimenter</div>
   {#if import.meta.env.DEV}
     <div class="inline-flex ml-2">
-      <div class="mr-4">Role: {$userStore.role}</div>
-      <div>State: {$groupStore.currentState}</div>
+      <div class="mr-4">NetID: {$userId}</div>
     </div>
   {/if}
   <div>
@@ -49,13 +41,12 @@ was just created -->
       class:invisible={!$loggedIn}
       on:click={logout}>logout</button
     >
-    {#if import.meta.env.DEV}
-      <button
-        class="px-4 py-1 text-xs font-bold bg-green-600 rounded"
-        class:invisible={!$loggedIn}
-        on:click={() => dispatch("resetGroup")}>Reset Group</button
-      >
-    {/if}
     <div />
   </div>
 </div>
+
+<style>
+  .banner {
+    @apply flex justify-around text-center text-white fixed left-0 bottom-0 w-[100vw] p-2 font-bold;
+  }
+</style>

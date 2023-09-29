@@ -144,5 +144,5 @@ determine what page a user should be on. -->
 </main>
 
 {#if $groupStore["currentState"] !== "phase-fixation"}
-  <Footer on:resetGroup={resetGroupData} />
+  <Footer />
 {/if}
