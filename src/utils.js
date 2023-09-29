@@ -79,27 +79,42 @@ export const globalVars = {
 // GLOBAL EXPERIMENT FUNCTIONS
 //############################
 
+// TODO: check netId exists within chosen groupId
+export const checkNetId = async (groupId, netId) => {
+  const docRef = doc(db, 'survivor-meta', `${groupId}`);
+  const docSnap = await getDoc(docRef);
+  const docData = docSnap.data(); // get doc data as an object
+  const membersMap = docData.members; // get members map
+  console.log("membersMap", membersMap)
+
+  // check if netId exists in members map
+  if (netId in membersMap) {
+    return true;
+  } else {
+    return false;
+  }
+};
+
+
 // Function to create a new user record in the database
-export const initUser = async (groupId, subId, role, name) => {
+export const initUser = async (groupId, netId, epNum) => {
   try {
     // We could have just tried to read the value of the $userId store here, but the $
     // syntax only works in .svelte files. There's a special get() function we have to
     // use instead, but because this is such simple case let's just make the userId like
     // we do in Login.svelte and avoid the overhead.
-    const userId = `${groupId}_${subId}_${role}`;
+    const userId = `${groupId}_${netId}_${epNum}`;
 
     const docRef = doc(db, 'participants', userId);
     await setDoc(docRef, {
-      userId: userId,
+      netId: netId,
       groupId: groupId,
-      subId: subId,
-      name: name,
-      role: role
+      epNum: epNum,
     });
 
     console.log(`New user successfully created with document ID: ${docRef.id}`);
   } catch (error) {
-    console.error(`Error creating new document with ID ${userId}: `, error);
+    console.error(`Error creating new document with netId ${netId}: `, error);
   }
 };
 

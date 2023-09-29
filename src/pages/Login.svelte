@@ -5,6 +5,7 @@ It asks them to select their Group and Name/NetID.render
 
 [x] TODO: Add a dropdown for Group ID
 [x] TODO: Add a textbox for Name/NetID
+[ ] TODO: Add a function from utils to check NetID is valid for that Group before allowing them to login
 
 -->
 
@@ -14,44 +15,36 @@ It asks them to select their Group and Name/NetID.render
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
   } from "firebase/auth";
-
-  import {
-    userStore,
-    initUser,
-    userId,
-    formatUserId,
-    saveName,
-  } from "../utils";
+  import { userStore, initUser, userId, checkNetId } from "../utils";
   import Button from "../components/Button.svelte";
 
-  let netId, subId, groupId, loginError;
+  let netId, groupId, epNum, loginError;
   const password = "cosanlab";
 
   const login = async () => {
-    console.log(name);
+    console.log(netId);
     const auth = getAuth();
     // Convert their text input to NNN_NNN_role format
-    let { groupId_f, subId_f, role_f, userId_f } = formatUserId(groupId, subId);
-    let email = `${groupId_f}_${subId_f}_${role_f}@experiment.com`;
+    let email = `${groupId}_${netId}_${epNum}@experiment.com`;
+    console.log("email", email);
     // The unique userId for any specific participant is a concatentation of their
     // groupId_subjectId_role
     // To make it easy to use this else where in the app we can save it as a svelte
     // store called $userId. Then we can use that in App.svelte
-    $userId = userId_f;
+    $userId = netId;
     // Also save this to the user's computer so that the app will auto-login them in
     // if they refresh the page, but don't press the logout button.
     localStorage.setItem("userId", $userId);
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      await initUser(groupId_f, subId_f, role_f, name);
-      await saveName(name);
+      await checkNetId(groupId, netId);
+      // await initUser(groupId, netId, epNum);
     } catch (error) {
       if (error.code === "auth/user-not-found") {
         console.log("no participant found...creating new account");
         await createUserWithEmailAndPassword(auth, email, password);
         await signInWithEmailAndPassword(auth, email, password);
-        await initUser(groupId_f, subId_f, role_f, name);
-        await saveName(name);
+        // await initUser(groupId, netId, epNum);
       } else {
         loginError = error.code;
         console.error(error);
@@ -65,6 +58,7 @@ It asks them to select their Group and Name/NetID.render
     class="px-8 pt-6 pb-8 mb-4 bg-white rounded shadow-md"
     on:submit|preventDefault={login}
   >
+    <!-- Group Selection Drop-Down -->
     <div class="mb-4">
       <label for="groupId" class="mb-2 text-sm font-bold text-gray-700"
         >Group</label
@@ -101,17 +95,38 @@ It asks them to select their Group and Name/NetID.render
         bind:value={netId}
       />
     </div>
+
+    <!-- Episode selection drop-down -->
+    <div class="mb-4">
+      <label for="epNum" class="mb-2 text-sm font-bold text-gray-700"
+        >Episode</label
+      >
+      <select
+        id="epNum"
+        name="epNum"
+        bind:value={epNum}
+        class="w-full px-3 py-2 leading-tight border rounded shadow focus:outline-none focus:shadow-outline"
+      >
+        <option value="">Select episode</option>
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+        <option value="6">6</option>
+      </select>
+    </div>
+
     <div class="text-center">
       <Button type={"submit"} color={"blue"}>Login</Button>
     </div>
   </form>
 </div>
 
-<style>
-  li {
-    @apply mr-4 text-xl;
-  }
-  ul {
-    @apply flex mb-2;
-  }
-</style>
+{#if loginError}
+  <div class="w-full max-w-md mb-6">
+    <div class="px-8 pt-6 pb-8 mb-4 bg-white rounded shadow-md">
+      <p class="text-red-500">Error: {loginError}</p>
+    </div>
+  </div>
+{/if}
