@@ -5,7 +5,7 @@ It asks them to select their Group and Name/NetID.render
 
 [x] TODO: Add a dropdown for Group ID
 [x] TODO: Add a textbox for Name/NetID
-[ ] TODO: Add a function from utils to check NetID is valid for that Group before allowing them to login
+[x] TODO: Add a function from utils to check NetID is valid for that Group before allowing them to login
 
 -->
 
@@ -37,16 +37,14 @@ It asks them to select their Group and Name/NetID.render
     localStorage.setItem("userId", $userId);
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      await checkNetId(groupId, netId);
-      // await initUser(groupId, netId, epNum);
+      await checkNetId(groupId, netId, epNum);
     } catch (error) {
       if (error.code === "auth/user-not-found") {
         console.log("no participant found...creating new account");
         await createUserWithEmailAndPassword(auth, email, password);
         await signInWithEmailAndPassword(auth, email, password);
-        // await initUser(groupId, netId, epNum);
       } else {
-        loginError = error.code;
+        loginError = error.message;
         console.error(error);
       }
     }

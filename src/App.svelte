@@ -142,7 +142,4 @@ determine what page a user should be on. -->
     {/if}
   {/if}
 </main>
-
-{#if $groupStore["currentState"] !== "phase-fixation"}
-  <Footer />
-{/if}
+<Footer />
