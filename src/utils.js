@@ -4,6 +4,7 @@ import { getStorage } from "firebase/storage";
 import { getFirestore, doc, getDoc, updateDoc, setDoc, runTransaction, serverTimestamp } from "firebase/firestore";
 import { getAuth } from 'firebase/auth';
 import { writable, get } from 'svelte/store';
+import { init } from "svelte/internal";
 
 //###############################################
 // INITIALIZE AND SETUP FIREBASE FOR DATA STORAGE
@@ -80,18 +81,22 @@ export const globalVars = {
 //############################
 
 // TODO: check netId exists within chosen groupId
-export const checkNetId = async (groupId, netId) => {
+export const checkNetId = async (groupId, netId, epNum) => {
   const docRef = doc(db, 'survivor-meta', `${groupId}`);
   const docSnap = await getDoc(docRef);
   const docData = docSnap.data(); // get doc data as an object
   const membersMap = docData.members; // get members map
   console.log("membersMap", membersMap)
 
+  let membersMapValues = Object.values(membersMap);
+
   // check if netId exists in members map
-  if (netId in membersMap) {
-    return true;
+  if (membersMapValues.includes(netId)) {
+    console.log(`netId ${netId} is a member of ${groupId}`)
+    await initUser(groupId, netId, epNum);
   } else {
-    return false;
+    console.log(`netId ${netId} not a member of ${groupId}`);
+    throw new Error(`netId ${netId} does not exist in ${groupId}`);
   }
 };
 
