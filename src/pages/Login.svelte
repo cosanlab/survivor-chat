@@ -30,10 +30,10 @@ It asks them to select their Group and Name/NetID.render
     let email = `${groupId}_${netId}_${epNum}@experiment.com`;
     console.log("email", email);
     // The unique userId for any specific participant is a concatentation of their
-    // groupId_subjectId_role
+    // groupId_netId_epNum
     // To make it easy to use this else where in the app we can save it as a svelte
     // store called $userId. Then we can use that in App.svelte
-    $userId = netId;
+    $userId = email;
     // Also save this to the user's computer so that the app will auto-login them in
     // if they refresh the page, but don't press the logout button.
     localStorage.setItem("userId", $userId);
@@ -52,6 +52,7 @@ It asks them to select their Group and Name/NetID.render
         console.log("no participant found...creating new account");
         await createUserWithEmailAndPassword(auth, email, password);
         await signInWithEmailAndPassword(auth, email, password);
+        await initUser(groupId, netId, epNum);
         dispatch("login-success");
       } else {
         loginError = error.message;

@@ -102,6 +102,45 @@ export const checkNetId = async (groupId, netId, epNum) => {
   }
 };
 
+
+export const getGroupIdFromEmail = (email) => {
+  // Split the email by underscore ('_')
+  const parts = email.split('_');
+  
+  // Check if there is at least one underscore in the email
+  if (parts.length > 1) {
+    // Return the first part (text before the first underscore)
+    return parts[0];
+  } else {
+    // If there are no underscores, return the original email
+    return email;
+  }
+}
+
+export const getEpNumFromEmail = (email) => {
+  // Split the email by '@' to separate the username and domain
+  const parts = email.split('@');
+  
+  // Check if there is at least one '@' in the email
+  if (parts.length === 2) {
+    // Get the first part (username) and split it by '_' to separate the parts
+    const usernameParts = parts[0].split('_');
+    
+    // Check if there is at least one underscore in the username
+    if (usernameParts.length > 1) {
+      // Get the last part (text after the last underscore)
+      const textAfterLastUnderscore = usernameParts[usernameParts.length - 1];
+      
+      // Return the text after the last underscore and before '@'
+      return textAfterLastUnderscore;
+    }
+  }
+  
+  // If there are no underscores or '@' symbol, return an empty string
+  return '';
+}
+
+
 // Function to create a new user record in the database
 export const initUser = async (groupId, netId, epNum) => {
   try {
@@ -109,20 +148,54 @@ export const initUser = async (groupId, netId, epNum) => {
     // syntax only works in .svelte files. There's a special get() function we have to
     // use instead, but because this is such simple case let's just make the userId like
     // we do in Login.svelte and avoid the overhead.
+    netId = netId.toLowerCase();
     const userId = `${groupId}_${netId}_${epNum}`;
 
-    const docRef = doc(db, 'participants', userId);
-    await setDoc(docRef, {
+    const userDocRef = doc(db, 'survivor-participants', userId);
+    await setDoc(userDocRef, {
       netId: netId,
       groupId: groupId,
       epNum: epNum,
+      email: `${groupId}_${netId}_${epNum}`,
+      currentState: 'instructions',
     });
 
-    console.log(`New user successfully created with document ID: ${docRef.id}`);
+    console.log(`New user successfully created - document ID: ${userDocRef.id}`);
   } catch (error) {
-    console.error(`Error creating new document with netId ${netId}: `, error);
+    console.error(`Error creating new document - netId ${netId}: `, error);
   }
 };
+
+
+
+// TODO: Function to create a new group record in the database
+// that corresponds to groupId and epNum
+export const initGroup = async (groupId, netId, epNum) => {
+  try {
+    // We could have just tried to read the value of the $userId store here, but the $
+    // syntax only works in .svelte files. There's a special get() function we have to
+    // use instead, but because this is such simple case let's just make the userId like
+    // we do in Login.svelte and avoid the overhead.
+    netId = netId.toLowerCase();
+    const userId = `${groupId}_${netId}_${epNum}`;
+
+    const userDocRef = doc(db, 'survivor-participants', userId);
+    await setDoc(userDocRef, {
+      netId: netId,
+      groupId: groupId,
+      epNum: epNum,
+      email: `${groupId}_${netId}_${epNum}`,
+      currentState: 'instructions',
+    });
+
+    console.log(`New user successfully created - document ID: ${userDocRef.id}`);
+  } catch (error) {
+    console.error(`Error creating new document - netId ${netId}: `, error);
+  }
+};
+
+// Function to create a new group record in the database
+// Append epNum to groupId to make it unique
 
 // Reset a group to the instructions and first trial
 // Doesn't erase their data
