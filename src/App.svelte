@@ -124,12 +124,12 @@
 determine what page a user should be on. -->
 <main class="flex flex-col items-center h-screen p-10 space-y-10">
   {#if !$loggedIn}
-    <Login />
+    <Login on:login-success={() => updateState("instructions")} />
   {:else if !$groupStore || !$groupStore["currentState"]}
     <Loading />
   {:else}
     <!-- Main experiment loop -->
-    {#if $groupStore["currentState"] === "instructions"}
+    {#if $userStore["currentState"] === "instructions"}
       <Instructions on:to-phase-01={() => updateState("phase-01")} />
     {:else if $groupStore["currentState"] === "phase-01"}
       <Phase_01 on:to-phase-02={() => updateState("phase-02")} />

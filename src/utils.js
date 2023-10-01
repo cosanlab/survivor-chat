@@ -82,6 +82,7 @@ export const globalVars = {
 
 // TODO: check netId exists within chosen groupId
 export const checkNetId = async (groupId, netId, epNum) => {
+  netId = netId.toLowerCase();
   const docRef = doc(db, 'survivor-meta', `${groupId}`);
   const docSnap = await getDoc(docRef);
   const docData = docSnap.data(); // get doc data as an object
@@ -95,11 +96,11 @@ export const checkNetId = async (groupId, netId, epNum) => {
     console.log(`netId ${netId} is a member of ${groupId}`)
     await initUser(groupId, netId, epNum);
   } else {
-    console.log(`netId ${netId} not a member of ${groupId}`);
-    throw new Error(`netId ${netId} does not exist in ${groupId}`);
+    let netIdError = `netId ${netId} not a member of ${groupId}`;
+    console.log("utils -- netIdError", netIdError);
+    throw new Error(netIdError);
   }
 };
-
 
 // Function to create a new user record in the database
 export const initUser = async (groupId, netId, epNum) => {
