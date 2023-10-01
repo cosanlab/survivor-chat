@@ -6,10 +6,11 @@ It asks them to select their Group and Name/NetID.render
 [x] TODO: Add a dropdown for Group ID
 [x] TODO: Add a textbox for Name/NetID
 [x] TODO: Add a function from utils to check NetID is valid for that Group before allowing them to login
-
+[ ] TODO: force lowercase netId
 -->
 
 <script>
+  import { createEventDispatcher } from "svelte";
   import {
     getAuth,
     signInWithEmailAndPassword,
@@ -20,6 +21,7 @@ It asks them to select their Group and Name/NetID.render
 
   let netId, groupId, epNum, loginError;
   const password = "cosanlab";
+  const dispatch = createEventDispatcher();
 
   const login = async () => {
     console.log(netId);
@@ -39,10 +41,18 @@ It asks them to select their Group and Name/NetID.render
       await signInWithEmailAndPassword(auth, email, password);
       await checkNetId(groupId, netId, epNum);
     } catch (error) {
-      if (error.code === "auth/user-not-found") {
+      console.log(error);
+      loginError = error.message;
+
+      // user doesn't exist in that group, throw error
+      if (error.message == `netId ${netId} not a member of ${groupId}`) {
+        loginError = `netId ${netId} not a member of ${groupId}`;
+        console.log(error);
+      } else if (error.code === "auth/user-not-found") {
         console.log("no participant found...creating new account");
         await createUserWithEmailAndPassword(auth, email, password);
         await signInWithEmailAndPassword(auth, email, password);
+        dispatch("login-success");
       } else {
         loginError = error.message;
         console.error(error);
@@ -87,7 +97,7 @@ It asks them to select their Group and Name/NetID.render
       </label>
       <input
         class="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline"
-        id="name"
+        id="netId"
         type="text"
         placeholder="Type your NetID here"
         bind:value={netId}
