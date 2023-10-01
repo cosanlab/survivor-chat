@@ -13,6 +13,8 @@
     resetGroupData,
     reqStateChange,
     serverTime,
+    getGroupIdFromEmail,
+    getEpNumFromEmail,
   } from "./utils.js";
 
   // app pages and components
@@ -100,14 +102,16 @@
         try {
           // Subscribe to their user doc
           unsubscribe_user = onSnapshot(
-            doc(db, "participants", $userId),
+            doc(db, "survivor-participants", $userId),
             (doc) => {
               userStore.set(doc.data());
             }
           );
           // Also subscribe to their group doc
+          let emailGroupId = getGroupIdFromEmail($userId);
+          let emailEpNum = getEpNumFromEmail($userId);
           unsubscribe_group = onSnapshot(
-            doc(db, "groups", $userId.slice(0, 3)),
+            doc(db, "survivor-groups", `${emailGroupId}_${emailEpNum}`),
             (doc) => {
               groupStore.set(doc.data());
             }
@@ -129,7 +133,7 @@ determine what page a user should be on. -->
     <Loading />
   {:else}
     <!-- Main experiment loop -->
-    {#if $userStore["currentState"] === "instructions"}
+    {#if $groupStore["currentState"] === "instructions"}
       <Instructions on:to-phase-01={() => updateState("phase-01")} />
     {:else if $groupStore["currentState"] === "phase-01"}
       <Phase_01 on:to-phase-02={() => updateState("phase-02")} />
