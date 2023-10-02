@@ -117,6 +117,20 @@ export const getGroupIdFromEmail = (email) => {
   }
 }
 
+export const getNetIdFromEmail = (email) => {
+  // Split the email by underscore ('_')
+  const parts = email.split('_');
+  
+  // Check if there is at least one underscore in the email
+  if (parts.length > 1) {
+    // Return the first part (text before the first underscore)
+    return parts[1];
+  } else {
+    // If there are no underscores, return the original email
+    return email;
+  }
+}
+
 export const getEpNumFromEmail = (email) => {
   // Split the email by '@' to separate the username and domain
   const parts = email.split('@');
