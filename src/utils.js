@@ -36,6 +36,11 @@ const app = initializeApp(firebaseConfig);
 export const db = getFirestore();
 export const storage = getStorage();
 export const auth = getAuth();
+
+// Export the name of the collections we'll be using
+export const participantsCollectionName = 'survivor-participants';
+export const groupsCollectionName = 'survivor-groups';
+export const metaCollectionName = 'survivor-meta';
 //###############################################
 
 //############################
@@ -83,7 +88,7 @@ export const globalVars = {
 // TODO: check netId exists within chosen groupId
 export const checkNetId = async (groupId, netId, epNum) => {
   netId = netId.toLowerCase();
-  const docRef = doc(db, 'survivor-meta', `${groupId}`);
+  const docRef = doc(db, metaCollectionName, `${groupId}`);
   const docSnap = await getDoc(docRef);
   const docData = docSnap.data(); // get doc data as an object
   const membersMap = docData.members; // get members map
@@ -155,58 +160,145 @@ export const getEpNumFromEmail = (email) => {
 }
 
 
-// Function to create a new user record in the database
+// Function to create a new user document in the database
 export const initUser = async (groupId, netId, epNum) => {
   try {
+    // Convert user-input netId to lowercase
+    netId = netId.toLowerCase();
+    // treat userId as their email
+    const userId = `${groupId}_${netId}_${epNum}`;
+
     // We could have just tried to read the value of the $userId store here, but the $
     // syntax only works in .svelte files. There's a special get() function we have to
     // use instead, but because this is such simple case let's just make the userId like
     // we do in Login.svelte and avoid the overhead.
-    netId = netId.toLowerCase();
-    const userId = `${groupId}_${netId}_${epNum}`;
+    const userDocRef = doc(db, participantsCollectionName, userId);
 
-    const userDocRef = doc(db, 'survivor-participants', userId);
-    await setDoc(userDocRef, {
-      netId: netId,
-      groupId: groupId,
-      epNum: epNum,
-      email: `${groupId}_${netId}_${epNum}`,
-      currentState: 'instructions',
-    });
+    // Check whether userId exists in partcipants doc first
+    const userDocSnapshot = await getDoc(userDocRef);
+    if (userDocSnapshot.exists()) {
+      // User doc already exists
+      console.log(`User doc already exists for ${userId}`);
+    } else {
+      // Creating new user doc
+      console.log(`Creating user doc for ${userId}...`);
 
-    console.log(`New user successfully created - document ID: ${userDocRef.id}`);
+      // Write user doc in participations collection
+      await setDoc(userDocRef, {
+        userId: userId, // email (format: groupId_netId_epNum)
+        groupId: groupId, // user chooses from drop-down; hard-coded in firebase db
+        netId: netId,
+        epNum: epNum,
+        currentState: 'instructions',
+        loggedIn: true
+      });
+    }
+    console.log(`'New user ${userId} successfully created with document ID ${userDocRef.id}`)
   } catch (error) {
-    console.error(`Error creating new document - netId ${netId}: `, error);
+    console.log(`Error adding new user ${userId} doc to survivor-participants collection`);
   }
 };
-
-
 
 // TODO: Function to create a new group record in the database
 // that corresponds to groupId and epNum
-export const initGroup = async (groupId, netId, epNum) => {
+
+// To initialize/update the group document in the database
+export const initGroup = async (counter) => {
+  console.log("initGroup -- counter", counter);
+  console.log("CHECK if groupId in groupstore", groupStore["groupId"])
+  let groupId;
+
+  // TODO: create group doc
+  // check if name of group already exists???
+  // if use doc(db, 'groups', ) should return name fo group id
+  // groupDocRef.id will be the name of the group
+
+  while (!groupStore["groupId"]) {
+    const roomGenConfig = {
+      dictionaries: [adjectives, colors],
+      style: 'lowerCase',
+      separator: '-'
+    };
+    groupId = uniqueNamesGenerator(roomGenConfig);
+
+    // check if the group document exists
+    const groupDocRef = doc(db, 'groups', groupId); // TODO: need await???
+    const groupDocSnapshot = await getDoc(groupDocRef);
+
+    if (!groupDocSnapshot.exists()) {
+      console.log(`Group doc does not exist for ${groupId}`);
+      groupStore["groupId"] = groupId;
+      userStore["groupId"] = groupId;
+      break;
+    } else {
+      console.log(`Group doc already exists for ${groupId}`);
+    }
+    break;
+  }
+
+  console.log("initGroup -- *UNIQUE* groupId", groupId);
+  // now create group doc using the unqiue groupId
+  const groupDocRef = doc(db, 'groups', groupId);
+  console.log(`Group ${groupId} document does not exist! Creating now...`);
   try {
-    // We could have just tried to read the value of the $userId store here, but the $
-    // syntax only works in .svelte files. There's a special get() function we have to
-    // use instead, but because this is such simple case let's just make the userId like
-    // we do in Login.svelte and avoid the overhead.
-    netId = netId.toLowerCase();
-    const userId = `${groupId}_${netId}_${epNum}`;
-
-    const userDocRef = doc(db, 'survivor-participants', userId);
-    await setDoc(userDocRef, {
-      netId: netId,
+    await setDoc(groupDocRef, {
+      counter: [],
       groupId: groupId,
-      epNum: epNum,
-      email: `${groupId}_${netId}_${epNum}`,
-      currentState: 'instructions',
+      numUsers: counter.length,
+      userIds: counter, // copy from meta counter
+      activeTurn: 1,
+      currentTrial: 0,
+      totalTrials: globalVars.numTotalTrials,
+      currentState: 'role-assignment', // start group at role assignment
+      trials: globalVars.DEBUG_MODE ? createTrials(globalVars.groupSize, true) : createTrials(globalVars.groupSize, false),
     });
-
-    console.log(`New user successfully created - document ID: ${userDocRef.id}`);
+    console.log(`New group ${groupId} successfully created with document ID: ${groupDocRef.id}`);
+  
+    // now iterate through each user in counter to assign their groupId
+    for (const userId of counter) {
+      const userDocRef = doc(db, 'participants', userId);
+    
+      // Assign groupId to each user doc
+      // groupId is initialized as '' in initUser()
+      await updateDoc(userDocRef, {
+        groupId: groupId,
+        currentState: 'role-assignment', // update user doc state to role assignment
+      });
+      console.log(`Assigned groupId ${groupId} to userId ${userId}`);
+    }
   } catch (error) {
-    console.error(`Error creating new document - netId ${netId}: `, error);
+      console.log(error)
   }
 };
+
+
+
+
+
+
+// export const initGroup = async (groupId, netId, epNum) => {
+//   try {
+//     // We could have just tried to read the value of the $userId store here, but the $
+//     // syntax only works in .svelte files. There's a special get() function we have to
+//     // use instead, but because this is such simple case let's just make the userId like
+//     // we do in Login.svelte and avoid the overhead.
+//     netId = netId.toLowerCase();
+//     const userId = `${groupId}_${netId}_${epNum}`;
+
+//     const userDocRef = doc(db, 'survivor-participants', userId);
+//     await setDoc(userDocRef, {
+//       netId: netId,
+//       groupId: groupId,
+//       epNum: epNum,
+//       email: `${groupId}_${netId}_${epNum}`,
+//       currentState: 'instructions',
+//     });
+
+//     console.log(`New user successfully created - document ID: ${userDocRef.id}`);
+//   } catch (error) {
+//     console.error(`Error creating new document - netId ${netId}: `, error);
+//   }
+// };
 
 // Function to create a new group record in the database
 // Append epNum to groupId to make it unique
