@@ -4,11 +4,15 @@ was just created -->
 <script>
   import { getAuth, signOut } from "firebase/auth";
   import { createEventDispatcher } from "svelte";
-  import { userStore, groupStore, loggedIn, userId } from "../utils.js";
-  const dispatch = createEventDispatcher();
+  import {
+    userStore,
+    groupStore,
+    loggedIn,
+    userId,
+    getNetIdFromEmail,
+  } from "../utils.js";
 
-  // Change to your email
-  const email = "wasita.gr@dartmouth.edu";
+  let netId = getNetIdFromEmail($userId);
 
   const logout = async () => {
     // Get the current auth status
@@ -32,7 +36,7 @@ was just created -->
 >
   {#if import.meta.env.DEV}
     <div class="inline-flex ml-2">
-      <div class="mr-4">NetID: {$userId}</div>
+      <div class="mr-4">NetID: {netId}</div>
     </div>
   {/if}
   <div>
