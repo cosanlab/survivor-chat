@@ -16,17 +16,28 @@ It asks them to select their Group and Name/NetID.render
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
   } from "firebase/auth";
-  import { userStore, initUser, userId, checkNetId } from "../utils";
+  import {
+    userStore,
+    initUser,
+    userId,
+    checkNetId,
+    initGroup,
+    metaStore,
+    allNetIds,
+  } from "../utils";
   import Button from "../components/Button.svelte";
 
   let netId, groupId, epNum, loginError;
   const password = "cosanlab";
   const dispatch = createEventDispatcher();
 
+  console.log("metaStore", $metaStore);
+
   const login = async () => {
     console.log(netId);
     const auth = getAuth();
     // Convert their text input to NNN_NNN_role format
+    netId = netId.toLowerCase();
     let email = `${groupId}_${netId}_${epNum}@experiment.com`;
     console.log("email", email);
     // The unique userId for any specific participant is a concatentation of their
@@ -53,6 +64,7 @@ It asks them to select their Group and Name/NetID.render
         await createUserWithEmailAndPassword(auth, email, password);
         await signInWithEmailAndPassword(auth, email, password);
         await initUser(groupId, netId, epNum);
+        await initGroup(groupId, netId, epNum);
         dispatch("login-success");
       } else {
         loginError = error.message;
@@ -92,17 +104,23 @@ It asks them to select their Group and Name/NetID.render
       </select>
     </div>
 
+    <!-- NetID Selection Drop-Down -->
     <div class="mb-4">
-      <label class="block mb-2 text-sm font-bold text-gray-700" for="name">
-        NetID
-      </label>
-      <input
-        class="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline"
+      <label for="netId" class="mb-2 text-sm font-bold text-gray-700"
+        >NetID</label
+      >
+      <select
         id="netId"
-        type="text"
-        placeholder="Type your NetID here"
+        name="netId"
         bind:value={netId}
-      />
+        class="w-full px-3 py-2 leading-tight border rounded shadow focus:outline-none focus:shadow-outline"
+      >
+        <option value="">Select your NetID</option>
+        {#each allNetIds as netId}
+          <!-- Extract the first three characters as the option value (e.g., "BBB", "DEV", etc.) -->
+          <option value={netId}>{netId}</option>
+        {/each}
+      </select>
     </div>
 
     <!-- Episode selection drop-down -->
