@@ -3,10 +3,10 @@
 This is the first page that a participant sees.
 It asks them to select their Group and Name/NetID.render
 
-[x] TODO: Add a dropdown for Group ID
-[x] TODO: Add a textbox for Name/NetID
-[x] TODO: Add a function from utils to check NetID is valid for that Group before allowing them to login
-[ ] TODO: force lowercase netId
+[ ] TODO: once logged in, check if currentState in group is equal to 'experiment'
+// if it is, then set userStore to 'experiment' and redirect to Experiment.svelte
+// and call a function to query other group members for their video timestamp
+// and sync to the fastest one
 -->
 
 <script>
