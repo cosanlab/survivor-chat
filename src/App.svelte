@@ -40,6 +40,7 @@
 
   // VARIABLES USED WITHIN App.svelte
   let unsubscribe_user, unsubscribe_group, unsubscribe_meta;
+  let unsubscribeUserId, unsubscribeGroupId;
 
   // Data updating API explanation:
   // See also database transaction write function in utils.js!
@@ -125,19 +126,30 @@
                       groupStore.set(groupDoc.data());
                     }
                   );
-                  console.log(`User ${userId} subbed to group ${groupId} data`);
+
+                  unsubscribeUserId = userId.subscribe((value) => {
+                    // This callback will be called whenever the userId store value changes
+                    console.log(
+                      `User ${value} subbed to group ${groupId} data`
+                    );
+                  });
                 }
               } else {
                 console.log("userDoc does not exist");
               }
-              console.log(`User ${userId} subbed to user data`);
+              unsubscribeUserId = userId.subscribe((value) => {
+                // This callback will be called whenever the userId store value changes
+                console.log(`User ${value} subbed to user data`);
+              });
             }
           );
-
           unsubscribe_meta = onSnapshot(doc(db, "survivor-meta"), (metaDoc) => {
             metaStore.set(metaDoc.data());
           });
-          console.log(`User ${userId} subbed to meta data`);
+          unsubscribeUserId = userId.subscribe((value) => {
+            // This callback will be called whenever the userId store value changes
+            console.log(`User ${value} subbed to meta data`);
+          });
         } catch (error) {
           console.error(error);
         }

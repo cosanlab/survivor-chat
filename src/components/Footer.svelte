@@ -4,7 +4,7 @@ was just created -->
 <script>
   import { getAuth, signOut } from "firebase/auth";
   import { createEventDispatcher } from "svelte";
-  import { userStore, groupStore, loggedIn, userId } from "../utils.js";
+  import { userStore, groupStore, loggedIn, userId, netId } from "../utils.js";
 
   const logout = async () => {
     // Get the current auth status
@@ -12,8 +12,10 @@ was just created -->
     try {
       await signOut(auth);
       // Delete the user Id from their computer so a new user can sign-in
-      localStorage.removeItem("netId");
+      localStorage.removeItem("userId");
       $userId = null;
+      // TODO: confirm that loggedIn field in user doc is then changed to false
+      $loggedIn = false;
       console.log("Sucessfully logged out of firebase");
     } catch (error) {
       console.error(error);
@@ -28,7 +30,7 @@ was just created -->
 >
   {#if import.meta.env.DEV}
     <div class="inline-flex ml-2">
-      <div class="mr-4">NetID: {$userId}</div>
+      <div class="mr-4">NetID: {$netId}</div>
     </div>
   {/if}
   <div>

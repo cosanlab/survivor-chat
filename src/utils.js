@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { initializeApp } from "firebase/app";
 import { getStorage } from "firebase/storage";
-import { getFirestore, doc, getDoc, updateDoc, setDoc, runTransaction, serverTimestamp, collectionGroup } from "firebase/firestore";
+import { getFirestore, doc, getDoc, updateDoc, setDoc, runTransaction, serverTimestamp } from "firebase/firestore";
 import { getAuth } from 'firebase/auth';
 import { writable, get } from 'svelte/store';
 import { init } from "svelte/internal";
@@ -57,6 +57,10 @@ export const metaStore = writable({});
 export const loggedIn = writable(false);
 // And one more so we can keep track of their user id to subscribe to their collection
 export const userId = writable(null);
+// NetID
+export const netId = writable(null);
+// Episode Number
+export const epNum = writable(null);
 // Store to control the UI for what state the experiment is in
 export const stateDisplay = writable([]);
 // Store server time
@@ -146,6 +150,10 @@ export const checkNetId = async (groupId, netId, epNum) => {
   const docData = docSnap.data(); // get doc data as an object
   const membersMap = docData.members; // get members map
   console.log("membersMap", membersMap)
+  
+  // Create a computed property to combine epNum and groupId
+  let combinedGroupIdEpNum = `${groupId}_${epNum}`;
+  console.log("combinedGroupIdEpNum", combinedGroupIdEpNum)
 
   let membersMapValues = Object.values(membersMap);
 
@@ -153,6 +161,7 @@ export const checkNetId = async (groupId, netId, epNum) => {
   if (membersMapValues.includes(netId)) {
     console.log(`netId ${netId} is a member of ${groupId}`)
     await initUser(groupId, netId, epNum);
+    await initGroup(combinedGroupIdEpNum, netId, epNum);
   } else {
     let netIdError = `netId ${netId} not a member of ${groupId}`;
     console.log("utils -- netIdError", netIdError);
@@ -216,6 +225,49 @@ export const getEpNumFromEmail = (email) => {
 // Function to create a new user document in the database
 export const initUser = async (groupId, netId, epNum) => {
   try {
+    // specify userId to include the specific group they are in and the episode number they're watching
+    const userId = `${groupId}_${netId}_${epNum}`;
+    console.log("initUser -- userId", userId);
+    let email = `${groupId}_${netId}_${epNum}@experiment.com`;
+    console.log("initUser -- groupId", groupId);
+    console.log("initUser -- netId", netId);
+    console.log("initUser -- epNum", epNum);
+    console.log("initUser -- email", email);
+    // We could have just tried to read the value of the $userId store here, but the $
+    // syntax only works in .svelte files. There's a special get() function we have to
+    // use instead, but because this is such simple case let's just make the userId like
+    // we do in Login.svelte and avoid the overhead.
+    const userDocRef = doc(db, participantsCollectionName, userId);
+
+    // Check whether userId exists in partcipants doc first
+    const userDocSnapshot = await getDoc(userDocRef);
+    if (userDocSnapshot.exists()) {
+      // User doc already exists
+      console.log(`User doc already exists for ${userId}`);
+    } else {
+      // Creating new user doc
+      console.log(`Creating user doc for ${userId}...`);
+
+      // Write user doc in participations collection
+      await setDoc(userDocRef, {
+        email: email, // email (format: groupId_netId_epNum)
+        userId: userId, // email (format: groupId_netId_epNum)
+        groupId: groupId, // user chooses from drop-down; hard-coded in firebase db
+        netId: netId,
+        epNum: epNum,
+        currentState: 'instructions',
+        loggedIn: true
+      });
+    }
+    console.log(`'New user ${userId} successfully created with document ID ${userDocRef.id}`)
+  } catch (error) {
+    console.log(`Error adding new user ${userId} doc to survivor-participants collection`);
+  }
+};
+
+// TODO: function to set loggedIn to false in user doc
+export const logoutUser = async (groupId, netId, epNum) => {
+  try {
     // Convert user-input netId to lowercase
     netId = netId.toLowerCase();
     // treat userId as their email
@@ -237,19 +289,13 @@ export const initUser = async (groupId, netId, epNum) => {
       console.log(`Creating user doc for ${userId}...`);
 
       // Write user doc in participations collection
-      await setDoc(userDocRef, {
-        email: userId, // email (format: groupId_netId_epNum)
-        userId: userId, // email (format: groupId_netId_epNum)
-        groupId: groupId, // user chooses from drop-down; hard-coded in firebase db
-        netId: netId,
-        epNum: epNum,
-        currentState: 'instructions',
-        loggedIn: true
+      await updateDoc(userDocRef, {
+        loggedIn: false
       });
     }
-    console.log(`'New user ${userId} successfully created with document ID ${userDocRef.id}`)
+    console.log(`'New user ${userId} successfully logged out with document ID ${userDocRef.id}`)
   } catch (error) {
-    console.log(`Error adding new user ${userId} doc to survivor-participants collection`);
+    console.log(`Error logging out user ${userId} doc`);
   }
 };
 
@@ -257,26 +303,26 @@ export const initUser = async (groupId, netId, epNum) => {
 // TODO: Function to initialize/update a new group record in the database
 // that corresponds to groupId and epNum
 export const initGroup = async (groupId, netId, epNum) => {
+  // At this point, groupId includes th eepNUm with it: e.g., "DEV_1"
   console.log("initGroup -- groupId", groupId);
-  console.log("initGroup -- Check groupId in groupStore", groupStore["groupId"]);
 
   // Note: if use doc(db, 'groups', ) should return name fo group id
   // groupDocRef.id will be the name of the group
 
   // Create group doc specific to the group and the episode number they're watching
-  const groupDocEpRef = doc(db, collectionGroup, `${groupId}_${epNum}`);
+  const groupDocEpRef = doc(db, groupsCollectionName, groupId);
   const groupDocEpSnapshot = await getDoc(groupDocEpRef);
 
   // Check if the group ep doc already exists
   // if it does, someone in the group has already logged in
   if (groupDocEpSnapshot.exists()) {
     // Group episode doc already exists
-    console.log(`Group doc already exists for ${groupId}_${epNum}`);
+    console.log(`Group doc already exists for ${groupId}`);
 
     // Update counter for group doc
   } else {
     // Create new group episode doc
-    console.log(`Group ${groupId}_${epNum} document does not exist! Creating now...`);
+    console.log(`Group ${groupId} document does not exist! Creating now...`);
     try {
       await setDoc(groupDocEpRef, {
         counter: [netId], // initialize counter as empty array - will be updated by reqStateChange()
@@ -285,7 +331,7 @@ export const initGroup = async (groupId, netId, epNum) => {
         // userIds: counter, // copy from meta counter
         currentState: 'instructions', // start group at role assignment
       });
-      console.log(`New group ${groupId}_${epNum} successfully created with document ID: ${groupDocEpRef.id}`);
+      console.log(`New group ${groupId} successfully created with document ID: ${groupDocEpRef.id}`);
     } catch (error) {
       console.log(error)
     }
