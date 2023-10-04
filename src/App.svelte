@@ -15,6 +15,7 @@
     serverTime,
     getGroupIdFromEmail,
     getEpNumFromEmail,
+    metaStore,
   } from "./utils.js";
 
   // app pages and components
@@ -35,8 +36,10 @@
   import Footer from "./components/Footer.svelte";
   import StatusHeader from "./components/StatusHeader.svelte";
 
+  // TODO: Add LogRocket
+
   // VARIABLES USED WITHIN App.svelte
-  let unsubscribe_user, unsubscribe_group;
+  let unsubscribe_user, unsubscribe_group, unsubscribe_meta;
 
   // Data updating API explanation:
   // See also database transaction write function in utils.js!
@@ -89,6 +92,9 @@
         if (unsubscribe_group) {
           unsubscribe_group();
         }
+        if (unsubscribe_meta) {
+          unsubscribe_meta();
+        }
       } else {
         // Set the userId store to the value on their local computer because if they're
         // logging in for the first time, then Login.svelte would have already done
@@ -103,19 +109,35 @@
           // Subscribe to their user doc
           unsubscribe_user = onSnapshot(
             doc(db, "survivor-participants", $userId),
-            (doc) => {
-              userStore.set(doc.data());
+            (userDoc) => {
+              if (userDoc.exists()) {
+                userStore.set(userDoc.data());
+                // Check if groupId exists, if it does, create group subscription
+                // that way group doc will run if user doc changes,
+                // always looking to check if they've been assigned to a group
+                const groupId = userDoc.data()?.groupId;
+                console.log("groupId", groupId);
+                if (groupId != "") {
+                  // Also subscribe to their group doc
+                  unsubscribe_group = onSnapshot(
+                    doc(db, "survivor-groups", groupId),
+                    (groupDoc) => {
+                      groupStore.set(groupDoc.data());
+                    }
+                  );
+                  console.log(`User ${userId} subbed to group ${groupId} data`);
+                }
+              } else {
+                console.log("userDoc does not exist");
+              }
+              console.log(`User ${userId} subbed to user data`);
             }
           );
-          // Also subscribe to their group doc
-          let emailGroupId = getGroupIdFromEmail($userId);
-          let emailEpNum = getEpNumFromEmail($userId);
-          unsubscribe_group = onSnapshot(
-            doc(db, "survivor-groups", `${emailGroupId}_${emailEpNum}`),
-            (doc) => {
-              groupStore.set(doc.data());
-            }
-          );
+
+          unsubscribe_meta = onSnapshot(doc(db, "survivor-meta"), (metaDoc) => {
+            metaStore.set(metaDoc.data());
+          });
+          console.log(`User ${userId} subbed to meta data`);
         } catch (error) {
           console.error(error);
         }

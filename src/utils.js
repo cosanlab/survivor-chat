@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { initializeApp } from "firebase/app";
 import { getStorage } from "firebase/storage";
-import { getFirestore, doc, getDoc, updateDoc, setDoc, runTransaction, serverTimestamp } from "firebase/firestore";
+import { getFirestore, doc, getDoc, updateDoc, setDoc, runTransaction, serverTimestamp, collectionGroup } from "firebase/firestore";
 import { getAuth } from 'firebase/auth';
 import { writable, get } from 'svelte/store';
 import { init } from "svelte/internal";
@@ -51,6 +51,8 @@ export const metaCollectionName = 'survivor-meta';
 export const userStore = writable({});
 // Another store for the group data
 export const groupStore = writable({});
+// Store for meta collection data that entails which netIds are in which groups
+export const metaStore = writable({});
 // Another store that keeps track of whether a user is logged in or not
 export const loggedIn = writable(false);
 // And one more so we can keep track of their user id to subscribe to their collection
@@ -85,9 +87,60 @@ export const globalVars = {
 // GLOBAL EXPERIMENT FUNCTIONS
 //############################
 
+// All NetIDs
+export const allNetIds = [
+  // BBB
+  "f0055n5",
+  "f006c2v",
+  "f00563r",
+  "f0055n3",
+  // DEV
+  "f004p57", // Wasita
+  // DVBrainiac
+  "f004gvv",
+  "f0055kp",
+  "f0069ys",
+  "f005cj7",
+  // EFD
+  "f005g15",
+  "f005g97",
+  "f0055k8",
+  "f005cn2",
+  // Freud's Favorites
+  "f0055q9",
+  "f005cyh",
+  "f005d1c",
+  "f005crp",
+  // Pavlov's Dawgs
+  "f004r11",
+  "f005cn4",
+  "f004rhy",
+  "f004msc",
+  // Psychiatric Trio
+  "f003xfx",
+  "f004r80",
+  "f004hd0",
+  "f004r1m",
+  // Team Luke
+  "f005cpx",
+  "f003pt8",
+  "f004p6r",
+  "f004ggx",
+  // The Psychedelics
+  "f006h88",
+  "f006bp5",
+  "f006hr8",
+  "f006b47",
+  // The Unreasonable Ocho
+  "f004hcz",
+  "f004ppp",
+  "f00560z",
+  "f003x6m"
+].sort();
+
 // TODO: check netId exists within chosen groupId
 export const checkNetId = async (groupId, netId, epNum) => {
-  netId = netId.toLowerCase();
+  // netId = netId.toLowerCase();
   const docRef = doc(db, metaCollectionName, `${groupId}`);
   const docSnap = await getDoc(docRef);
   const docData = docSnap.data(); // get doc data as an object
@@ -185,6 +238,7 @@ export const initUser = async (groupId, netId, epNum) => {
 
       // Write user doc in participations collection
       await setDoc(userDocRef, {
+        email: userId, // email (format: groupId_netId_epNum)
         userId: userId, // email (format: groupId_netId_epNum)
         groupId: groupId, // user chooses from drop-down; hard-coded in firebase db
         netId: netId,
@@ -199,80 +253,44 @@ export const initUser = async (groupId, netId, epNum) => {
   }
 };
 
-// TODO: Function to create a new group record in the database
+// TODO: group-specific counters
+// TODO: Function to initialize/update a new group record in the database
 // that corresponds to groupId and epNum
+export const initGroup = async (groupId, netId, epNum) => {
+  console.log("initGroup -- groupId", groupId);
+  console.log("initGroup -- Check groupId in groupStore", groupStore["groupId"]);
 
-// To initialize/update the group document in the database
-export const initGroup = async (counter) => {
-  console.log("initGroup -- counter", counter);
-  console.log("CHECK if groupId in groupstore", groupStore["groupId"])
-  let groupId;
-
-  // TODO: create group doc
-  // check if name of group already exists???
-  // if use doc(db, 'groups', ) should return name fo group id
+  // Note: if use doc(db, 'groups', ) should return name fo group id
   // groupDocRef.id will be the name of the group
 
-  while (!groupStore["groupId"]) {
-    const roomGenConfig = {
-      dictionaries: [adjectives, colors],
-      style: 'lowerCase',
-      separator: '-'
-    };
-    groupId = uniqueNamesGenerator(roomGenConfig);
+  // Create group doc specific to the group and the episode number they're watching
+  const groupDocEpRef = doc(db, collectionGroup, `${groupId}_${epNum}`);
+  const groupDocEpSnapshot = await getDoc(groupDocEpRef);
 
-    // check if the group document exists
-    const groupDocRef = doc(db, 'groups', groupId); // TODO: need await???
-    const groupDocSnapshot = await getDoc(groupDocRef);
+  // Check if the group ep doc already exists
+  // if it does, someone in the group has already logged in
+  if (groupDocEpSnapshot.exists()) {
+    // Group episode doc already exists
+    console.log(`Group doc already exists for ${groupId}_${epNum}`);
 
-    if (!groupDocSnapshot.exists()) {
-      console.log(`Group doc does not exist for ${groupId}`);
-      groupStore["groupId"] = groupId;
-      userStore["groupId"] = groupId;
-      break;
-    } else {
-      console.log(`Group doc already exists for ${groupId}`);
-    }
-    break;
-  }
-
-  console.log("initGroup -- *UNIQUE* groupId", groupId);
-  // now create group doc using the unqiue groupId
-  const groupDocRef = doc(db, 'groups', groupId);
-  console.log(`Group ${groupId} document does not exist! Creating now...`);
-  try {
-    await setDoc(groupDocRef, {
-      counter: [],
-      groupId: groupId,
-      numUsers: counter.length,
-      userIds: counter, // copy from meta counter
-      activeTurn: 1,
-      currentTrial: 0,
-      totalTrials: globalVars.numTotalTrials,
-      currentState: 'role-assignment', // start group at role assignment
-      trials: globalVars.DEBUG_MODE ? createTrials(globalVars.groupSize, true) : createTrials(globalVars.groupSize, false),
-    });
-    console.log(`New group ${groupId} successfully created with document ID: ${groupDocRef.id}`);
-  
-    // now iterate through each user in counter to assign their groupId
-    for (const userId of counter) {
-      const userDocRef = doc(db, 'participants', userId);
-    
-      // Assign groupId to each user doc
-      // groupId is initialized as '' in initUser()
-      await updateDoc(userDocRef, {
+    // Update counter for group doc
+  } else {
+    // Create new group episode doc
+    console.log(`Group ${groupId}_${epNum} document does not exist! Creating now...`);
+    try {
+      await setDoc(groupDocEpRef, {
+        counter: [netId], // initialize counter as empty array - will be updated by reqStateChange()
         groupId: groupId,
-        currentState: 'role-assignment', // update user doc state to role assignment
+        // numUsers: counter.length,
+        // userIds: counter, // copy from meta counter
+        currentState: 'instructions', // start group at role assignment
       });
-      console.log(`Assigned groupId ${groupId} to userId ${userId}`);
-    }
-  } catch (error) {
+      console.log(`New group ${groupId}_${epNum} successfully created with document ID: ${groupDocEpRef.id}`);
+    } catch (error) {
       console.log(error)
+    }
   }
 };
-
-
-
 
 
 
