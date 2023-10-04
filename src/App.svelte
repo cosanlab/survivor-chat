@@ -20,21 +20,19 @@
 
   // app pages and components
   import Login from "./pages/Login.svelte";
+
+  // Instructions -- Confirm login and waiting for other users to login in shor time window (1 min.)
   import Instructions from "./pages/Instructions.svelte";
 
-  // Experiment phases - waiting for others in your group to join
+  // Countdown to start of experiment
   import Phase_01 from "./pages/Phase_01.svelte";
 
-  // Countdown to start of experiment
-  import Phase_02 from "./pages/Phase_02.svelte";
-
   // Experiment start -- video watching & chat room
-  import Phase_03 from "./pages/Phase_03.svelte";
+  import Phase_02 from "./pages/Phase_02.svelte";
 
   import Debrief from "./pages/Debrief.svelte";
   import Loading from "./components/Loading.svelte";
   import Footer from "./components/Footer.svelte";
-  import StatusHeader from "./components/StatusHeader.svelte";
 
   // TODO: Add LogRocket
 
@@ -163,21 +161,14 @@ determine what page a user should be on. -->
 <main class="flex flex-col items-center h-screen p-10 space-y-10">
   {#if !$loggedIn}
     <Login on:login-success={() => updateState("instructions")} />
-  {:else if !$groupStore || !$groupStore["currentState"]}
-    <Loading />
-  {:else}
-    <!-- Main experiment loop -->
-    {#if $groupStore["currentState"] === "instructions"}
-      <Instructions on:to-phase-01={() => updateState("phase-01")} />
-    {:else if $groupStore["currentState"] === "phase-01"}
-      <Phase_01 on:to-phase-02={() => updateState("phase-02")} />
-    {:else if $groupStore["currentState"] === "phase-02"}
-      <Phase_02 on:to-phase-03={() => updateState("phase-03")} />
-    {:else if $groupStore["currentState"] === "phase-03"}
-      <Phase_03 on:to-phase-04={() => updateState("debrief")} />
-    {:else if $groupStore["currentState"] === "debrief"}
-      <Debrief />
-    {/if}
+  {:else if $userStore["currentState"] === "instructions"}
+    <Instructions on:to-experiment={() => updateState("countdown")} />
+  {:else if $groupStore["currentState"] === "phase-01"}
+    <Phase_01 on:to-phase-02={() => updateState("phase-02")} />
+  {:else if $groupStore["currentState"] === "phase-02"}
+    <Phase_02 on:to-debrief={() => updateState("debrief")} />
+  {:else if $groupStore["currentState"] === "debrief"}
+    <Debrief />
   {/if}
 </main>
 <Footer />
