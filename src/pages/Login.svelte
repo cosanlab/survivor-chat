@@ -24,33 +24,38 @@ It asks them to select their Group and Name/NetID.render
     initGroup,
     metaStore,
     allNetIds,
+    netId,
   } from "../utils";
   import Button from "../components/Button.svelte";
 
-  let netId, groupId, epNum, loginError;
+  let groupId, epNum, loginError;
   const password = "cosanlab";
   const dispatch = createEventDispatcher();
 
   console.log("metaStore", $metaStore);
 
   const login = async () => {
-    console.log(netId);
+    console.log("Login -- login -- async -- netId", $netId);
     const auth = getAuth();
-    // Convert their text input to NNN_NNN_role format
-    netId = netId.toLowerCase();
-    let email = `${groupId}_${netId}_${epNum}@experiment.com`;
-    console.log("email", email);
+    let netIdForEmail = $netId;
+    let fullId = `${groupId}_${netIdForEmail}_${epNum}`;
+    let email = `${groupId}_${netIdForEmail}_${epNum}@experiment.com`;
+    console.log("Login -- fullId", fullId);
+    console.log("Login -- email", email);
+
     // The unique userId for any specific participant is a concatentation of their
     // groupId_netId_epNum
     // To make it easy to use this else where in the app we can save it as a svelte
     // store called $userId. Then we can use that in App.svelte
-    $userId = email;
+    $userId = fullId;
     // Also save this to the user's computer so that the app will auto-login them in
     // if they refresh the page, but don't press the logout button.
     localStorage.setItem("userId", $userId);
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      await checkNetId(groupId, netId, epNum);
+      // Check if NetID is valid for that group
+      // if it is, within checkNetId, we call initUser() and initGroup()
+      await checkNetId(groupId, $netId, epNum);
     } catch (error) {
       console.log(error);
       loginError = error.message;
@@ -63,10 +68,15 @@ It asks them to select their Group and Name/NetID.render
         console.log("no participant found...creating new account");
         await createUserWithEmailAndPassword(auth, email, password);
         await signInWithEmailAndPassword(auth, email, password);
-        await initUser(groupId, netId, epNum);
-        await initGroup(groupId, netId, epNum);
-        dispatch("login-success");
+        // await initUser(groupId, $netId, epNum);
+        // console.log("Login() -- initGroup");
+        // await initGroup(combinedGroupIdEpNum, $netId, epNum);
+        // dispatch("login-success");
       } else {
+        console.log("other error");
+        console.log("$netId", $netId);
+        console.log("netId", netId);
+        console.log("email", email);
         loginError = error.message;
         console.error(error);
       }
@@ -112,7 +122,7 @@ It asks them to select their Group and Name/NetID.render
       <select
         id="netId"
         name="netId"
-        bind:value={netId}
+        bind:value={$netId}
         class="w-full px-3 py-2 leading-tight border rounded shadow focus:outline-none focus:shadow-outline"
       >
         <option value="">Select your NetID</option>
