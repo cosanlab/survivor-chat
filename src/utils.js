@@ -98,7 +98,10 @@ export const allNetIds = [
   "f00563r",
   "f0055n3",
   // DEV
-  "f004p57", // Wasita
+  "f004p57", // Wasita]
+  "dev_test_1",
+  "dev_test_2",
+  "dev_test_3",
   // DVBrainiac
   "f004gvv",
   "f0055kp",

@@ -152,10 +152,10 @@ determine what page a user should be on. -->
 <main class="flex flex-col items-center h-screen p-10 space-y-10">
   {#if !$loggedIn}
     <Login on:login-success={() => updateState("instructions")} />
-  {:else if $userStore["currentState"] === "instructions"}
+  {:else if $groupStore["currentState"] === "instructions"}
     <Instructions on:to-experiment={() => updateState("countdown")} />
-  {:else if $userStore["currentState"] === "countdown"}
-    <CountdownTransition on:to-experiment={() => updateState("experiment")} />
+  {:else if $groupStore["currentState"] === "countdown"}
+    <CountdownTransition on:finished={() => updateState("experiment")} />
   {:else if $groupStore["currentState"] === "experiment"}
     <Experiment on:finished={() => updateState("debrief")} />
   {:else if $groupStore["currentState"] === "debrief"}

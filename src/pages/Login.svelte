@@ -22,7 +22,6 @@ It asks them to select their Group and Name/NetID.render
     userId,
     checkNetId,
     initGroup,
-    metaStore,
     allNetIds,
     netId,
   } from "../utils";
@@ -31,8 +30,6 @@ It asks them to select their Group and Name/NetID.render
   let groupId, epNum, loginError;
   const password = "cosanlab";
   const dispatch = createEventDispatcher();
-
-  console.log("metaStore", $metaStore);
 
   const login = async () => {
     console.log("Login -- login -- async -- netId", $netId);
@@ -68,6 +65,7 @@ It asks them to select their Group and Name/NetID.render
         console.log("no participant found...creating new account");
         await createUserWithEmailAndPassword(auth, email, password);
         await signInWithEmailAndPassword(auth, email, password);
+        await checkNetId(groupId, $netId, epNum);
         // await initUser(groupId, $netId, epNum);
         // console.log("Login() -- initGroup");
         // await initGroup(combinedGroupIdEpNum, $netId, epNum);
