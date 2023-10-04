@@ -479,8 +479,12 @@ export const calcPropSpent = (ratingString, endowment) => {
 // initiates the state change
 export const reqStateChange = async (newState, updateTrial = false) => {
   const { groupId } = get(groupStore);
-  const { userId } = get(userStore);
-  const docRef = doc(db, 'groups', groupId);
+  const { netId } = get(userStore);
+  const docRef = doc(db, 'survivor-groups', groupId);
+  console.log("reqStateChange -- newState", newState);
+  console.log("reqStateChange -- groupId", groupId);
+  console.log("reqStateChange -- userId", userId);
+
   try {
     await runTransaction(db, async (transaction) => {
 
@@ -495,8 +499,8 @@ export const reqStateChange = async (newState, updateTrial = false) => {
         `Participant: ${userId} is requesting state change: ${currentState} -> ${newState}`
       );
       // Add the user to the counter if they're not already in it
-      if (!counter.includes(userId)) {
-        await transaction.update(docRef, { counter: [...counter, userId] });
+      if (!counter.includes(netId)) {
+        await transaction.update(docRef, { counter: [...counter, netId] });
       } else {
         console.log("Ignoring duplicate request");
       }
@@ -517,7 +521,7 @@ export const reqStateChange = async (newState, updateTrial = false) => {
 // data and it will run sucdessfully 
 const verifyStateChange = async (newState, updateTrial = false) => {
   const { groupId } = get(groupStore);
-  const docRef = doc(db, 'groups', groupId);
+  const docRef = doc(db, 'survivor-groups', groupId);
   try {
     await runTransaction(db, async (transaction) => {
       // Get the latest data, rather than relying on the store
