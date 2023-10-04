@@ -4,7 +4,6 @@ import { getStorage } from "firebase/storage";
 import { getFirestore, doc, getDoc, updateDoc, setDoc, runTransaction, serverTimestamp } from "firebase/firestore";
 import { getAuth } from 'firebase/auth';
 import { writable, get } from 'svelte/store';
-import { init } from "svelte/internal";
 
 //###############################################
 // INITIALIZE AND SETUP FIREBASE FOR DATA STORAGE
@@ -477,7 +476,7 @@ export const calcPropSpent = (ratingString, endowment) => {
 // Checks to see if all participants are ready to transition from state A -> B each
 // time the function runs. So only the *last* user to call this function actually
 // initiates the state change
-export const reqStateChange = async (newState, updateTrial = false) => {
+export const reqStateChange = async (newState) => {
   const { groupId } = get(groupStore);
   const { netId } = get(userStore);
   const docRef = doc(db, 'survivor-groups', groupId);
@@ -510,7 +509,7 @@ export const reqStateChange = async (newState, updateTrial = false) => {
   }
   // Use helper function to run a second transaction that checks the counter length and
   // actually performs the state change if appropriate
-  await verifyStateChange(newState, updateTrial);
+  await verifyStateChange(newState);
 };
 
 // Helper function called by reqStateChange that runs a follow-up transaction after the
@@ -519,7 +518,7 @@ export const reqStateChange = async (newState, updateTrial = false) => {
 // Also has the benefit that if all 3 users have requested a state change, but it failed
 // for some reason, then any user can re-make that request without overwriting their
 // data and it will run sucdessfully 
-const verifyStateChange = async (newState, updateTrial = false) => {
+const verifyStateChange = async (newState) => {
   const { groupId } = get(groupStore);
   const docRef = doc(db, 'survivor-groups', groupId);
   try {
@@ -530,25 +529,16 @@ const verifyStateChange = async (newState, updateTrial = false) => {
         throw "Document does not exist!";
       }
       // Get latest counter
-      const { counter, currentTrial, trials } = document.data();
-      const maxTrials = trials.length;
-      if (counter.length === 2) {
+      const { counter } = document.data();
+      // Want there to be at least 3 members present
+      if (counter.length === 3) {
         console.log('Last request...initiating state change');
         const obj = {};
         obj["counter"] = [];
         obj["currentState"] = newState;
-        if (updateTrial) {
-          if (currentTrial + 1 === maxTrials) {
-            console.log("At last trial...going to debrief");
-            obj["currentState"] = 'debrief';
-          } else {
-            console.log(`Also getting next trial`);
-            obj["currentTrial"] = currentTrial + 1;
-          }
-        }
         await transaction.update(docRef, obj);
       } else {
-        console.log(`Still waiting for ${2 - counter.length} requests...`);
+        console.log(`Still waiting for ${3 - counter.length} requests...`);
       }
     });
   } catch (error) {
