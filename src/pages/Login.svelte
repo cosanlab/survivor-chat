@@ -74,6 +74,7 @@ It asks them to select their Group and Name/NetID.render
         console.error(error);
       }
     }
+    dispatch("finished");
   };
 </script>
 

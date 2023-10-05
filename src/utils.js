@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { initializeApp } from "firebase/app";
 import { getStorage } from "firebase/storage";
-import { getFirestore, doc, getDoc, updateDoc, setDoc, runTransaction, serverTimestamp } from "firebase/firestore";
+import { getFirestore, doc, addDoc, getDoc, updateDoc, setDoc, collection, runTransaction, serverTimestamp } from "firebase/firestore";
 import { getAuth } from 'firebase/auth';
 import { writable, get } from 'svelte/store';
 
@@ -66,11 +66,10 @@ export const stateDisplay = writable([]);
 export const serverTime = serverTimestamp();
 
 // Add any global variables you want to use elsewhere in the app
-// Then use them in another file by importing:
-// import { globalVars } from '../utils.js';
-// console.log(globalVars.time)
 export const globalVars = {
-  maxGroupSize: 4
+  maxGroupSize: 4,
+  minGroupSize: 3,
+  DEBUG_MODE: false,
 };
 
 //############################
@@ -240,6 +239,9 @@ export const initUser = async (groupId, netId, epNum) => {
     console.log("initUser -- netId", netId);
     console.log("initUser -- epNum", epNum);
     console.log("initUser -- email", email);
+    let combinedGroupIdEpNum = `${groupId}_${epNum}`;
+    console.log("initUser -- combinedGroupIdEpNum", combinedGroupIdEpNum);
+
     // We could have just tried to read the value of the $userId store here, but the $
     // syntax only works in .svelte files. There's a special get() function we have to
     // use instead, but because this is such simple case let's just make the userId like
@@ -260,6 +262,7 @@ export const initUser = async (groupId, netId, epNum) => {
         email: email, // email (format: groupId_netId_epNum)
         userId: userId, // email (format: groupId_netId_epNum)
         groupId: groupId, // user chooses from drop-down; hard-coded in firebase db
+        groupDocName: combinedGroupIdEpNum, // ${groupId}_${epNum}
         netId: netId,
         epNum: epNum,
         loggedIn: true
@@ -333,10 +336,9 @@ export const initGroup = async (groupId, netId, epNum) => {
         counter: [netId], // initialize counter as empty array - will be updated by reqStateChange()
         groupId: groupId,
         epNum: epNum,
-        currentState: 'instructions', // start group at instructions screen
+        currentState: 'countdown', // start group at instructions screen
         videoTime: 0, // initialize video time as 0
         lastUser: "", // initialize last user as empty string; will be 4th user if they exist
-        messages: [], // initialize messages as empty array
       });
       console.log(`New group ${groupId} successfully created with document ID: ${groupDocEpRef.id}`);
     } catch (error) {
@@ -344,6 +346,80 @@ export const initGroup = async (groupId, netId, epNum) => {
     }
   }
 };
+
+
+// add userId to meta counter
+export const reqGroupDocChange = async (userId, groupDocName) => {
+  console.log("reqGroupDocChange -- userId", userId);
+  console.log("reqGroupDocChange -- groupDocName", groupDocName);
+  const groupDocRef = doc(db, 'survivor-groups', groupDocName);
+
+  // update group doc
+  try {
+    await runTransaction(db, async (transaction) => {
+
+      // Get the latest data, rather than relying on the store
+      const document = await transaction.get(groupDocRef);
+      if (!document.exists()) {
+        throw "Document does not exist!";
+      }
+      // Freshest data
+      const { counter } = document.data();
+      const data = { counter: [...counter, userId] };
+
+      // Add the user to the counter if they're not already in it
+      if (!counter.includes(userId)) {
+        await transaction.update(groupDocRef, data);
+      } else {
+        console.log("Ignoring duplicate request");
+      }
+    });
+  } catch (error) {
+    console.error(`Error updating group doc for userId: ${userId}`, error);
+  }
+  // Use helper function to run a second transaction that checks the counter length and
+  // actually performs the state change if appropriate
+  await checkIfResetCounter(userId);
+};
+
+// helper funtion to run check for meta doc change
+// every time user joins, check if counter is full
+const checkIfResetCounter = async () => {
+  console.log("checkIfResetCounter");
+  // Get latest counter
+  let counter;
+
+  const groupDocRef = doc(db, 'survivor-groups', groupId);
+
+  try {
+    await runTransaction(db, async (transaction) => {
+      // Get the latest data, rather than relying on the store
+      const document = await transaction.get(groupDocRef);
+      if (!document.exists()) {
+        throw "Document does not exist!";
+      }
+      // Get latest counter
+      counter = document.data().counter;
+      console.log("checkIfResetCounter -- runTransaction -- counter.length", counter.length);
+
+    });
+  } catch (error) {
+    console.error(`Error verifying group doc change`, error);
+  }
+
+  if (counter.length === globalVars.minGroupSize) {
+    console.log('Initializing group...');
+    // initialize group
+    await initGroup(counter);
+  } else {
+    console.log(`Still waiting for ${globalVars.minGroupSize - counter.length} requests...`);
+  }
+
+};
+
+
+
+
 
 // Reset a group to the instructions and first trial
 // Doesn't erase their data
@@ -369,9 +445,15 @@ export const addMessage = async (groupDocName, messageObj) => {
   console.log("addMessage -- groupDocName", groupDocName);
   console.log("addMessage -- messageObj", messageObj);
 
+  // have to do this here bc serverTimestamp() 
+  // serverTimestamp() is not currently supported inside arrays
+  // add absolute timestamp to messageObj
+  messageObj['absolute_timestamp'] = serverTime;
+
   // Access the group doc
   const groupDocRef = doc(db, groupsCollectionName, groupDocName);
   const groupDocSnapshot = await getDoc(groupDocRef);
+  const messagesCollectionRef = collection(groupDocRef, "messages");
 
   // Check if the group doc already exists
   if (groupDocSnapshot.exists()) {
@@ -380,9 +462,8 @@ export const addMessage = async (groupDocName, messageObj) => {
 
     // Update messages for group doc
     try {
-      await updateDoc(groupDocRef, {
-        messages: [...groupDocSnapshot.data().messages, messageObj]
-      });
+      // Add the message to the "messages" collection as a new document
+      await addDoc(messagesCollectionRef, messageObj);
       console.log(`New message successfully added to group ${groupDocName}`);
     } catch (error) {
       console.log(error)
@@ -561,153 +642,39 @@ const verifyStateChange = async (newState) => {
   }
 };
 
-// Save each user's name in the group doc
-export const saveName = async (name) => {
-  const { groupId } = get(groupStore);
-  const { role } = get(userStore);
-  const docRef = doc(db, 'groups', groupId);
+// Request user state change and verify the state change
+export const reqUserStateChange = async (newState) => {
+  const { userId } = get(userStore);
+  console.log("Utils -- reqUserStateChange -- userId", userId);
+  const docRef = doc(db, 'survivor-participants', userId);
+
+  // update user doc
   try {
     await runTransaction(db, async (transaction) => {
-      const document = await transaction.get(docRef);
-      if (!document.exists()) {
-        throw "Document does not exist!";
-      }
-      const updateData = {};
-      if (role === 'investor') {
-        updateData['I_name'] = name;
-      } else if (role === 'trustee') {
-        updateData['T_name'] = name;
-      } else {
-        throw `${role} is an unknown role`;
-      }
-      await transaction.update(docRef, updateData);
-      console.log(`Successfully added ${name} to db`);
-    });
 
-  } catch (error) {
-    console.error(`Error saving name for user: ${name}`, error);
-  }
-
-};
-
-// Save trial data for Q questions handling concurrent writes
-export const saveQData = async (questions) => {
-  const { groupId, currentState } = get(groupStore);
-  const { role } = get(userStore);
-  const docRef = doc(db, 'groups', groupId);
-  try {
-    await runTransaction(db, async (transaction) => {
       // Get the latest data, rather than relying on the store
       const document = await transaction.get(docRef);
       if (!document.exists()) {
         throw "Document does not exist!";
       }
-      // Get the latest trial and current trial
-      const { trials, currentTrial } = document.data();
-      const data = { "trials": trials };
-      console.log("data", data)
-      console.log("questions", questions)
-      console.log("currentTrial", currentTrial)
-
-      // TO E FROM W: I know this is spaghetti but it (seemingly) gets the job done
-      if (currentState === "phase-01") {
-        if (role === "investor") {
-          data["trials"][currentTrial]["I_CHOICE"] = rounded(questions[0].rating);
-        } else if (role === 'trustee') {
-          data["trials"][currentTrial]["T_PREDICTION"] = rounded(questions[0].rating);
-        } else {
-          throw `${role} is an unknown role`;
-        }
-      } else if (currentState === "phase-02") {
-        if (role === "investor") {
-          data["trials"][currentTrial]["I_1ST_ORDER_EXPECTATION"] = rounded(questions.rating);
-        } else if (role === 'trustee') {
-          data["trials"][currentTrial]["T_2ND_ORDER_EXPECTATION"] = rounded(questions.rating);
-        } else {
-          throw `${role} is an unknown role`;
-        }
-      } else if (currentState === "phase-03") {
-        if (role === 'trustee') {
-          let endowment = data["trials"][currentTrial].endowment;
-          let t_choice = rounded(questions[0].rating); // how much T chooses to give to I (of the invested amount * multiplier)
-          let i_choice = rounded(data["trials"][currentTrial]["I_CHOICE"]); // how much of endowment I chose to invest in T from phase-01
-
-          data["trials"][currentTrial]["T_CHOICE"] = t_choice; // how much T returned to I
-          data["trials"][currentTrial]["T_EARNED"] = rounded(((i_choice * globalVars.multiplier) - t_choice));
-          data["trials"][currentTrial]["I_EARNED"] = rounded((endowment - i_choice) + t_choice); // should be: (endowment - I_CHOICE) + T_CHOICE
-
-        } else if (role === 'investor') {
-          console.log("investor waiting for trustee")
-        } else {
-          throw `${role} is an unknown role`;
-        }
-      } else if (currentState === "phase-04") {
-        if (role === 'trustee' || role === 'investor') {
-          console.log("finished phase-04")
-        } else if (currentState === "phase-05") {
-          if (role === 'trustee' || role === 'investor') {
-
-            let self = role === "trustee" ? "T" : "I"
-
-            data["trials"][currentTrial][`${self}_GUILT`] = rounded(questions[0].rating);
-            data["trials"][currentTrial][`${self}_COUNTERFACTUAL_GUILT`] = rounded(questions[1].rating);
-          } else {
-            throw `${role} is an unknown role`;
-          }
-        }
-      }
-
+      // Freshest data
+      const { currentState } = document.data();
+      console.log(
+        `Participant: ${userId} is requesting state change: ${currentState} -> ${newState}`
+      );
+      const data = {};
+      data["currentState"] = newState;
+      data[`${currentState}_end`] = serverTime;
+      data[`${newState}_start`] = serverTime;
+      console.log('Initiating state change...');
       await transaction.update(docRef, data);
-      console.log(`Successfully saved Q data for: ${role}`);
+      console.log('Ran transaction...');
     });
   } catch (error) {
-    console.error(`Error saving data for group: ${groupId}`, error);
+    console.error(`Error updating state to ${newState} for user: ${userId}`, error);
   }
 };
 
-export const saveAPQData = async (questions) => {
-  const { groupId } = get(groupStore);
-  const { role } = get(userStore);
-  const docRef = doc(db, 'groups', groupId);
-  try {
-    await runTransaction(db, async (transaction) => {
-      const document = await transaction.get(docRef);
-      if (!document.exists()) {
-        throw "Document does not exist!";
-      }
-      // Get the latest trial and current trial
-      const { trials, currentTrial } = document.data();
-      const data = { "trials": trials };
-      let prefix;
-      let suffix;
-      let key;
-      if (role === "decider1") {
-        prefix = "D1_";
-      } else if (role === "decider2") {
-        prefix = "D2_";
-      } else if (role === 'receiver') {
-        prefix = "R_";
-      } else {
-        throw `${role} is an unknown role`;
-      }
-      questions.forEach((q) => {
-        if (q.type.includes("other")) {
-          suffix = q.type.split("_")[1];
-          key = prefix === "D1_" ? "D2_" : "D1_";
-          key = `${prefix}${key}${suffix}`;
-        } else {
-          key = `${prefix}${q.type}`;
-        }
-        data["trials"][currentTrial][key] = q.rating;
-      });
-      await transaction.update(docRef, data);
-      console.log(`Successfully saved APQ data for: ${role}`);
-    });
-  } catch (error) {
-    console.error(`Error saving data for group: ${groupId}`, error);
-  }
-
-};
 
 export const saveDebrief = async (data) => {
   const { groupId } = get(groupStore);

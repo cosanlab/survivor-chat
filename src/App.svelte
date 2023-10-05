@@ -1,6 +1,6 @@
 <script>
   import { onAuthStateChanged } from "firebase/auth";
-  import { doc, updateDoc, onSnapshot } from "firebase/firestore";
+  import { doc, onSnapshot } from "firebase/firestore";
   import { onMount } from "svelte";
   import {
     auth,
@@ -9,14 +9,14 @@
     groupStore,
     loggedIn,
     userId,
-    initUser,
     resetGroupData,
     reqStateChange,
-    serverTime,
+    reqUserStateChange,
   } from "./utils.js";
 
   // app pages and components
   import Login from "./pages/Login.svelte";
+  import RequestFullScreen from "./pages/RequestFullScreen.svelte";
 
   // Instructions -- Confirm login and waiting for other users to login in shor time window (1 min.)
   import Instructions from "./pages/Instructions.svelte";
@@ -67,7 +67,23 @@
   // their UI at approx the same time as the other users.
   //
 
+  // Update user state
+  const updateUserState = async (newState) => {
+    console.log(
+      "App -- updateUserState -- currentState",
+      $userStore["currentState"]
+    );
+    console.log("App -- updateUserState -- newState", newState);
+    await reqUserStateChange(newState);
+  };
+
+  // Update group state
   const updateState = async (newState) => {
+    console.log(
+      "App -- updateState -- currentState",
+      $groupStore["currentState"]
+    );
+    console.log("App -- updateState -- newState", newState);
     await reqStateChange(newState);
   };
 
@@ -84,9 +100,11 @@
         $loggedIn = false;
         if (unsubscribe_user) {
           unsubscribe_user();
+          unsubscribe_user = null;
         }
         if (unsubscribe_group) {
           unsubscribe_group();
+          unsubscribe_group = null;
         }
       } else {
         // Set the userId store to the value on their local computer because if they're
@@ -97,7 +115,7 @@
         // computer.
         $userId = localStorage.getItem("userId");
         $loggedIn = true;
-        console.log(`participant ${$userId} signed-in. Loading data...`);
+        console.log(`User ${$userId} signed-in. Loading data...`);
         try {
           // Subscribe to their user doc
           unsubscribe_user = onSnapshot(
@@ -145,18 +163,32 @@
       }
     });
   });
+
+  console.log(
+    "App.svelte -- userStore['currentState']",
+    $userStore["currentState"]
+  );
+
+  console.log(
+    "App.svelte -- groupStore['currentState']",
+    $groupStore["currentState"]
+  );
 </script>
 
 <!-- This is our main markup. It uses the currentState field of the userStore to
 determine what page a user should be on. -->
 <main class="flex flex-col items-center p-10 mx-auto space-y-10 bg-white">
   {#if !$loggedIn}
-    <Login on:login-success={() => updateState("instructions")} />
+    <Login on:finished={() => updateUserState("request-full-screen")} />
+  {:else if $userStore["currentState"] === "request-full-screen"}
+    <RequestFullScreen on:finished={() => updateUserState("instructions")} />
+  {:else if $userStore["currentState"] === "instructions"}
+    <Instructions />
+    <!-- Pages below are when they've entered the experiment 
+      and are in a group. -->
   {:else}
-    <!-- if logged in -->
-    {#if $groupStore["currentState"] === "instructions"}
-      <Instructions on:to-experiment={() => updateState("countdown")} />
-    {:else if $groupStore["currentState"] === "countdown"}
+    <!-- Now in a group -->
+    {#if $groupStore["currentState"] === "countdown"}
       <CountdownTransition on:finished={() => updateState("experiment")} />
     {:else if $groupStore["currentState"] === "experiment"}
       <Experiment on:finished={() => updateState("debrief")} />

@@ -1,29 +1,23 @@
 <script>
-  import { createEventDispatcher } from "svelte";
+  import { onMount, createEventDispatcher } from "svelte";
+  import {
+    userId,
+    userStore,
+    groupStore,
+    reqGroupDocChange,
+  } from "../utils.js";
   import Loading from "../components/Loading.svelte";
-  import Button from "../components/Button.svelte";
 
-  let submitted = false;
-  const dispatch = createEventDispatcher();
-
-  async function goto_experiment() {
-    submitted = true;
-    dispatch("to-experiment");
-  }
+  // Add userId to group counter doc on mount
+  onMount(async () => {
+    console.log("Lobby -- onMount -- groupDocName", $userStore["groupDocName"]);
+    await reqGroupDocChange($userStore["netId"], $userStore["groupDocName"]);
+    console.log("Lobby -- groupStore", $groupStore["groupId"]);
+  });
 </script>
 
-{#if submitted}
-  <Loading
-    text={"Please stay on this screen... waiting for your group members to login..."}
-  />
-{:else}
-  <div class="flex flex-col items-center">
-    <h1 class="mb-4 text-5xl">Instructions</h1>
-    <p class="w-1/2 mb-4 text-center">
-      In this experiment, you will be watching an episode of Survivor (Season
-      28) with your group members. <br />
-      Click the 'next' button to continue.<br />
-    </p>
-    <Button on:click={goto_experiment}>Next</Button>
-  </div>
-{/if}
+<!-- TODO: tell them how many others we are waiting for -->
+<!-- UI -->
+<Loading
+  text={"Please stay on this screen... waiting for your group members to login..."}
+/>

@@ -144,10 +144,10 @@
       return;
     }
 
+    // Add userId and netId to messageObj to make things easier
     let messageObj = {
       author: `${avatar}`,
       relative_timestamp: formatTime(time),
-      // absolute_timestamp: serverTime,
       message_string: `${avatar}: ${message.message_string}`,
     };
     console.log("messageObj", messageObj);
@@ -156,11 +156,7 @@
     messages = messages.concat(messageObj);
     console.log("updated messages list", messages);
 
-    // tell server a message was sent to ultimately update
-    // all other client's UIs in room
-
-    // TODO: client-side firestore write with all content for this specific message
-    // no need to concatenate on client-side, only do on server-side
+    // add message to the
     await addMessage($groupStore["groupId"], messageObj);
 
     updateScroll();
