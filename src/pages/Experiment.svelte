@@ -5,6 +5,20 @@
 
 <script>
   import { createEventDispatcher } from "svelte";
+  import {
+    Player,
+    Hls,
+    DefaultUi,
+    Scrim,
+    VolumeControl,
+    DefaultControls,
+    Controls,
+    ControlSpacer,
+    MuteControl,
+    PlaybackControl,
+    TimeProgress,
+  } from "@vime/svelte";
+
   const dispatch = createEventDispatcher();
 </script>
 

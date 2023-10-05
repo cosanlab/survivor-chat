@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@vime/core": "^5.4.1",
+    "@vime/svelte": "^5.4.1",
     "firebase": "^9.6.4"
   }
 }
