@@ -70,18 +70,7 @@ export const serverTime = serverTimestamp();
 // import { globalVars } from '../utils.js';
 // console.log(globalVars.time)
 export const globalVars = {
-  multiplier: 4, // TODO: have multiplier of 4 as default, but can vary this in a future hidden multiplier version
-  minPainDur: 5,
-  maxPainDur: 15,
-  maxEndowment: 5,
-  maxPossiblePainReduction: 10,
-  deliveryTimeBuffer: 3000, // additional time to wait for stimulation to finish
-  costConversion: {
-    0.5: '2',
-    0.75: '1.5',
-    1: '1'
-  },
-  receiverEndowmentPerTrial: 2 //  36 trials * $2/trial = $72 theoretical max
+  maxGroupSize: 4
 };
 
 //############################
@@ -144,7 +133,7 @@ export const allNetIds = [
   "f003x6m"
 ].sort();
 
-// TODO: check netId exists within chosen groupId
+// Check netId exists within chosen groupId
 export const checkNetId = async (groupId, netId, epNum) => {
   // netId = netId.toLowerCase();
   const docRef = doc(db, metaCollectionName, `${groupId}`);
@@ -223,6 +212,14 @@ export const getEpNumFromEmail = (email) => {
   return '';
 }
 
+// convert time from seconds to mm:ss format
+export const formatTime = (seconds) => {
+    if (isNaN(seconds)) return "...";
+    const minutes = Math.floor(seconds / 60);
+    seconds = Math.floor(seconds % 60);
+    if (seconds < 10) seconds = "0" + seconds;
+    return `${minutes}:${seconds}`;
+  };
 
 // Function to create a new user document in the database
 export const initUser = async (groupId, netId, epNum) => {
