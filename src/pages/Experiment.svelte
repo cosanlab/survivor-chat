@@ -40,7 +40,7 @@
 
   const onTimeUpdate = (event) => {
     time = event.detail;
-    console.log("onTimeUpdate", time);
+    // console.log("onTimeUpdate", time);
   };
 
   // emoji menu
@@ -165,9 +165,61 @@
   };
 </script>
 
-<!-- Chat window -->
-<div class="flex flex-col items-center">
-  <div class="main">
+<!-- Video & Chat Sidebar -->
+
+<div class="flex">
+  <!-- Video -->
+  <div class="basis-1/2">
+    <div id="video_cont">
+      <Player
+        autoplay
+        bind:this={player}
+        muted={true}
+        bind:paused
+        bind:currentTime={time}
+        on:vmCurrentTimeChange={onTimeUpdate}
+        on:vmPlaybackEnded={handleEnd}
+      >
+        <!-- TODO: convert .mp4 to .m3u8 files -->
+        <!-- svelte-ignore a11y-media-has-caption -->
+        <!-- <Hls version="latest" config={hlsConfig}>
+          <source
+            data-src="https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/tv.11516.S28E1.1080p.H264.20200815180824.mp4"
+            type="application/x-mpegURL"
+          />
+        </Hls> -->
+
+        <Video>
+          <!-- These are passed directly to the underlying HTML5 `<video>` element. -->
+          <!-- Why `data-src`? Lazy loading, you can always use `src` if you prefer.  -->
+          <source
+            data-src="https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/tv.11516.S28E1.1080p.H264.20200815180824.mp4"
+            type="video/mp4"
+          />
+        </Video>
+
+        <!-- ... -->
+
+        <DefaultUi noControls noClickToPlay noDblClickFullscreen>
+          <Scrim />
+          <Controls fullWidth pin="topLeft">
+            <ControlSpacer />
+            <MuteControl />
+          </Controls>
+          <ControlSpacer />
+          <Controls fullWidth pin="bottomRight">
+            <ControlSpacer />
+            <TimeProgress />
+          </Controls>
+        </DefaultUi>
+      </Player>
+      Don't forget to click the unmute button in the top-right corner!
+    </div>
+  </div>
+
+  <!-- Chat window -->
+  <div class="basis-1/2">
+    <!-- Chat window -->
     <div id="chatWindow">
       <ul id="messages">
         {#each messages as message}
@@ -272,48 +324,247 @@
   </div>
 </div>
 
-<!-- Video -->
-<div id="video_cont">
-  <Player
-    autoplay
-    bind:this={player}
-    muted={true}
-    bind:paused
-    bind:currentTime={time}
-    on:vmCurrentTimeChange={onTimeUpdate}
-    on:vmPlaybackEnded={handleEnd}
-  >
-    <!-- TODO: convert .mp4 to .m3u8 files -->
-    <!-- svelte-ignore a11y-media-has-caption -->
-    <!-- <Hls version="latest" config={hlsConfig}>
-      <source
-        data-src="https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/tv.11516.S28E1.1080p.H264.20200815180824.mp4"
-        type="application/x-mpegURL"
-      />
-    </Hls> -->
+<style>
+  :global(vm-playback-control) {
+    --vm-control-scale: 2;
+  }
 
-    <Video>
-      <!-- These are passed directly to the underlying HTML5 `<video>` element. -->
-      <!-- Why `data-src`? Lazy loading, you can always use `src` if you prefer.  -->
-      <source
-        data-src="https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/tv.11516.S28E1.1080p.H264.20200815180824.mp4"
-        type="video/mp4"
-      />
-    </Video>
+  :root {
+    --chat-win-color: #000;
+    --author-bg-color: #2294fb;
+    --author-fg-color: #fff;
+    --unicorn-bg-color: #981ceb;
+    --fish-bg-color: #1b95e0;
+    --cat-bg-color: #fab81e;
+    --snake-bg-color: #19cf86;
+    --other-bg-color: #b4b4bc;
+    --other-fg-color: #000;
+    /* purple 5d01f1 */
+    --server-fg-color: #747474;
+    --server-bg-color: #fff;
+    --form-btn-color: #f20089;
+  }
+  /* 
+  p {
+    margin: 1em;
+    color: #000;
+  }
 
-    <!-- ... -->
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    overflow: hidden;
+  } */
 
-    <DefaultUi noControls noClickToPlay noDblClickFullscreen>
-      <Scrim />
-      <Controls fullWidth pin="topLeft">
-        <ControlSpacer />
-        <MuteControl />
-      </Controls>
-      <ControlSpacer />
-      <Controls fullWidth pin="bottomRight">
-        <ControlSpacer />
-        <TimeProgress />
-      </Controls>
-    </DefaultUi>
-  </Player>
-</div>
+  /* div {
+    position: relative;
+  } */
+  span {
+    padding: 0.2em 0.5em;
+    color: white;
+    text-shadow: 0 0 8px black;
+    font-size: 1.3em;
+    opacity: 0.7;
+  }
+
+  /* .main {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 95vh;
+    width: 500px;
+    max-width: 600px;
+    right: 2em;
+    position: fixed;
+    overflow: auto;
+  } */
+
+  form {
+    background: #000000;
+    padding: 3px;
+    width: 100%;
+    display: flex;
+    border: 10px solid var(--chat-win-color);
+    border-radius: 0em 0em 1em 1em;
+  }
+
+  form input {
+    border: 0;
+    padding: 10px;
+    width: 90%;
+    margin-right: 0.5%;
+    color: #000;
+    font-size: 12pt;
+  }
+
+  /* @media screen and (device-aspect-ratio: 375/667) {
+    form input {
+      font-size: 16px;
+    }
+  } */
+
+  form button {
+    background: #000;
+    border: 3px;
+    padding: 10px 10px 15px 10px;
+    color: #fff;
+    text-align: center;
+  }
+
+  form button:active {
+    background: #000;
+    border: 3px;
+    padding: 10px 10px 15px 10px;
+    color: #fff;
+    text-align: center;
+    transform: rotate(5deg);
+  }
+
+  #chatWindow {
+    margin-top: 2em;
+    height: 500px;
+    width: 100%;
+    border: 10px solid var(--chat-win-color);
+    overflow: auto;
+    border-radius: 1em 1em 0em 0em;
+  }
+
+  /* @media (min-height: 500px) {
+    #chatWindow {
+      height: 500px;
+    }
+  } */
+
+  #messages {
+    align-self: center;
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    font-size: 12pt;
+  }
+
+  #messages li {
+    /* determines height */
+    padding: 5px 10px;
+    border-radius: 1em;
+    margin: 0.75em 7em;
+    width: 75%;
+    background: var(--author-bg-color);
+    color: var(--author-fg-color);
+    overflow-wrap: break-word;
+    /* to get tapering like in iMessage */
+    border-radius: 1em 1em 0 1em;
+  }
+
+  #timestamp {
+    text-align: right;
+    font-size: 0.75rem;
+    line-height: 0.75rem;
+    margin: 1em 18em;
+    padding: 0;
+  }
+
+  #messages li.server {
+    padding: 5px 10px;
+    border-radius: 1em;
+    margin: 0.5em auto;
+    width: 95%;
+    background: var(--server-bg-color);
+    color: var(--server-fg-color);
+    overflow-wrap: break-word;
+    /* to get tapering like in iMessage */
+    border-radius: 0 0 0 0;
+  }
+
+  #messages li.other {
+    padding: 5px 10px;
+    border-radius: 1em;
+    margin: 0.75em 0.75em;
+    width: 75%;
+    background: var(--other-bg-color);
+    color: var(--other-fg-color);
+    overflow-wrap: break-word;
+    /* to get tapering like in iMessage */
+    border-radius: 1em 1em 1em 0;
+  }
+
+  #timestamp-other {
+    text-align: left;
+    font-size: 0.75rem;
+    line-height: 0.75rem;
+    margin: 1em 1em;
+    padding: 0;
+  }
+
+  ::placeholder {
+    color: #000;
+  }
+
+  /* VIDEO */
+
+  /* #video_cont {
+    width: 50%;
+    max-width: 600px;
+  } */
+
+  :global(vm-playback-control) {
+    --vm-control-scale: 1.7;
+  }
+
+  /* EMOJI PANEL */
+
+  #btn-emoji-icon-cont {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  #emoji-opener-icon {
+    padding: 0.1em 0.4em 0em 0.1em;
+    font-size: 2rem;
+    cursor: pointer;
+    transition: all 0.1s;
+    color: #fff;
+  }
+
+  #emoji-opener-icon:active {
+    padding: 0.1em 0.4em 0em 0.1em;
+    font-size: 2rem;
+    transform: rotate(20deg);
+    cursor: pointer;
+    color: #fff;
+  }
+
+  /* emoji selection popup container */
+  #emoji-cont {
+    max-width: 100px;
+    max-height: 100px;
+    overflow: scroll;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    margin-left: 0px;
+    /* 		border: 1px solid gray;
+		background: #ddd; */
+  }
+
+  #emoji-cont header {
+    width: 90%;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    border: 1px solid gray;
+  }
+
+  #emoji-cont header div {
+    cursor: pointer;
+  }
+
+  #closer-icon {
+    font-size: 1.5rem;
+    font-weight: bold;
+    text-align: right;
+  }
+</style>

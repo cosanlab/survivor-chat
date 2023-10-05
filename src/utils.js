@@ -79,6 +79,14 @@ export const globalVars = {
 // GLOBAL EXPERIMENT FUNCTIONS
 //############################
 
+// Episode URLs
+export const episodeUrls = [
+  // epNum = "1"
+  "https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/tv.11516.S28E1.1080p.H264.20200815180824.mp4",
+  // "epNum = 2"
+  "https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/tv.11516.S28E2.360p.H264.20191224003251.mp4"
+];
+
 // All NetIDs
 export const allNetIds = [
   // BBB
@@ -152,7 +160,7 @@ export const checkNetId = async (groupId, netId, epNum) => {
   if (membersMapValues.includes(netId)) {
     console.log(`netId ${netId} is a member of ${groupId}`)
     await initUser(groupId, netId, epNum);
-    await initGroup(combinedGroupIdEpNum, netId);
+    await initGroup(combinedGroupIdEpNum, netId, epNum);
   } else {
     let netIdError = `netId ${netId} not a member of ${groupId}`;
     console.log("utils -- netIdError", netIdError);
@@ -299,7 +307,7 @@ export const logoutUser = async (groupId, netId, epNum) => {
 
 // Function to initialize/update a new group record in the database
 // that corresponds to groupId and epNum
-export const initGroup = async (groupId, netId) => {
+export const initGroup = async (groupId, netId, epNum) => {
   // At this point, groupId includes th eepNUm with it: e.g., "DEV_1"
   console.log("initGroup -- groupId", groupId);
 
@@ -324,7 +332,11 @@ export const initGroup = async (groupId, netId) => {
       await setDoc(groupDocEpRef, {
         counter: [netId], // initialize counter as empty array - will be updated by reqStateChange()
         groupId: groupId,
+        epNum: epNum,
         currentState: 'instructions', // start group at instructions screen
+        videoTime: 0, // initialize video time as 0
+        lastUser: "", // initialize last user as empty string; will be 4th user if they exist
+        messages: [], // initialize messages as empty array
       });
       console.log(`New group ${groupId} successfully created with document ID: ${groupDocEpRef.id}`);
     } catch (error) {
