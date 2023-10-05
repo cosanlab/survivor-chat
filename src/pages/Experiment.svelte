@@ -14,7 +14,7 @@
     formatTime,
     userStore,
     groupStore,
-    updateMessages,
+    addMessage,
   } from "../utils.js";
   import {
     Player,
@@ -41,6 +41,9 @@
     backBufferLength: 90,
   };
   console.log("hlsConfig", hlsConfig);
+  console.log("userStore", $userStore["userId"]);
+  console.log("groupStore", $groupStore["groupId"]);
+
   let player;
   let paused = false;
   let time = 0;
@@ -144,7 +147,7 @@
     let messageObj = {
       author: `${avatar}`,
       relative_timestamp: formatTime(time),
-      absolute_timestamp: serverTime,
+      // absolute_timestamp: serverTime,
       message_string: `${avatar}: ${message.message_string}`,
     };
     console.log("messageObj", messageObj);
@@ -158,7 +161,7 @@
 
     // TODO: client-side firestore write with all content for this specific message
     // no need to concatenate on client-side, only do on server-side
-    await updateMessages(messageObj);
+    await addMessage($groupStore["groupId"], messageObj);
 
     updateScroll();
     message.message_string = "";

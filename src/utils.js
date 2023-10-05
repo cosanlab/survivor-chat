@@ -362,6 +362,42 @@ export const resetGroupData = async () => {
 
 };
 
+// Chat utils
+
+// Function to add a new message to the group doc
+export const addMessage = async (groupDocName, messageObj) => {
+  console.log("addMessage -- groupDocName", groupDocName);
+  console.log("addMessage -- messageObj", messageObj);
+
+  // Access the group doc
+  const groupDocRef = doc(db, groupsCollectionName, groupDocName);
+  const groupDocSnapshot = await getDoc(groupDocRef);
+
+  // Check if the group doc already exists
+  if (groupDocSnapshot.exists()) {
+    // Group doc already exists
+    console.log(`Group doc already exists for ${groupDocName}`);
+
+    // Update messages for group doc
+    try {
+      await updateDoc(groupDocRef, {
+        messages: [...groupDocSnapshot.data().messages, messageObj]
+      });
+      console.log(`New message successfully added to group ${groupDocName}`);
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+};
+
+
+
+
+
+
+
+
 // Format the values the user inputted so that we encode each id as 000, 001...NNN, so
 // we can use them as unique document ideas up to 1000 subs.
 export const formatUserId = (groupId, subId, role) => {
