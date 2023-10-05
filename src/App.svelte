@@ -149,17 +149,20 @@
 
 <!-- This is our main markup. It uses the currentState field of the userStore to
 determine what page a user should be on. -->
-<main class="flex flex-col items-center h-screen p-10 space-y-10">
+<main class="flex flex-col items-center p-10 mx-auto space-y-10 bg-white">
   {#if !$loggedIn}
     <Login on:login-success={() => updateState("instructions")} />
-  {:else if $groupStore["currentState"] === "instructions"}
-    <Instructions on:to-experiment={() => updateState("countdown")} />
-  {:else if $groupStore["currentState"] === "countdown"}
-    <CountdownTransition on:finished={() => updateState("experiment")} />
-  {:else if $groupStore["currentState"] === "experiment"}
-    <Experiment on:finished={() => updateState("debrief")} />
-  {:else if $groupStore["currentState"] === "debrief"}
-    <Debrief />
+  {:else}
+    <!-- if logged in -->
+    {#if $groupStore["currentState"] === "instructions"}
+      <Instructions on:to-experiment={() => updateState("countdown")} />
+    {:else if $groupStore["currentState"] === "countdown"}
+      <CountdownTransition on:finished={() => updateState("experiment")} />
+    {:else if $groupStore["currentState"] === "experiment"}
+      <Experiment on:finished={() => updateState("debrief")} />
+    {:else if $groupStore["currentState"] === "debrief"}
+      <Debrief />
+    {/if}
   {/if}
 </main>
 <Footer />

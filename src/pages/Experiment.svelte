@@ -8,7 +8,14 @@
   import { createEventDispatcher } from "svelte";
   import { fade } from "svelte/transition";
   import { fly } from "svelte/transition";
-  import { db, serverTime, formatTime } from "../utils.js";
+  import {
+    db,
+    serverTime,
+    formatTime,
+    userStore,
+    groupStore,
+    updateMessages,
+  } from "../utils.js";
   import {
     Player,
     Video,
@@ -126,7 +133,7 @@
   };
 
   // upon message submit, update chat log in window
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     // remove preceeding and trailing whitespaces
     message.message_string = message.message_string.trim();
 
@@ -151,13 +158,7 @@
 
     // TODO: client-side firestore write with all content for this specific message
     // no need to concatenate on client-side, only do on server-side
-
-    // db.collection(`${collectionName}`)
-    //   .doc(`${room}`)
-    //   .collection("messages")
-    //   .add(messageObj)
-    //   .then(() => console.log("successful"))
-    //   .catch((error) => console.error(error));
+    await updateMessages(messageObj);
 
     updateScroll();
     message.message_string = "";
