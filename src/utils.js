@@ -163,7 +163,7 @@ export const checkNetId = async (groupId, netId, epNum) => {
   if (membersMapValues.includes(netId)) {
     console.log(`netId ${netId} is a member of ${groupId}`)
     await initUser(groupId, netId, epNum);
-    await initGroup(combinedGroupIdEpNum, netId, epNum);
+    await initGroup(combinedGroupIdEpNum, netId);
   } else {
     let netIdError = `netId ${netId} not a member of ${groupId}`;
     console.log("utils -- netIdError", netIdError);
@@ -257,7 +257,6 @@ export const initUser = async (groupId, netId, epNum) => {
         groupId: groupId, // user chooses from drop-down; hard-coded in firebase db
         netId: netId,
         epNum: epNum,
-        currentState: 'instructions',
         loggedIn: true
       });
     }
@@ -301,10 +300,9 @@ export const logoutUser = async (groupId, netId, epNum) => {
   }
 };
 
-// TODO: group-specific counters
-// TODO: Function to initialize/update a new group record in the database
+// Function to initialize/update a new group record in the database
 // that corresponds to groupId and epNum
-export const initGroup = async (groupId, netId, epNum) => {
+export const initGroup = async (groupId, netId) => {
   // At this point, groupId includes th eepNUm with it: e.g., "DEV_1"
   console.log("initGroup -- groupId", groupId);
 
@@ -329,9 +327,7 @@ export const initGroup = async (groupId, netId, epNum) => {
       await setDoc(groupDocEpRef, {
         counter: [netId], // initialize counter as empty array - will be updated by reqStateChange()
         groupId: groupId,
-        // numUsers: counter.length,
-        // userIds: counter, // copy from meta counter
-        currentState: 'instructions', // start group at role assignment
+        currentState: 'instructions', // start group at instructions screen
       });
       console.log(`New group ${groupId} successfully created with document ID: ${groupDocEpRef.id}`);
     } catch (error) {
@@ -339,35 +335,6 @@ export const initGroup = async (groupId, netId, epNum) => {
     }
   }
 };
-
-
-
-// export const initGroup = async (groupId, netId, epNum) => {
-//   try {
-//     // We could have just tried to read the value of the $userId store here, but the $
-//     // syntax only works in .svelte files. There's a special get() function we have to
-//     // use instead, but because this is such simple case let's just make the userId like
-//     // we do in Login.svelte and avoid the overhead.
-//     netId = netId.toLowerCase();
-//     const userId = `${groupId}_${netId}_${epNum}`;
-
-//     const userDocRef = doc(db, 'survivor-participants', userId);
-//     await setDoc(userDocRef, {
-//       netId: netId,
-//       groupId: groupId,
-//       epNum: epNum,
-//       email: `${groupId}_${netId}_${epNum}`,
-//       currentState: 'instructions',
-//     });
-
-//     console.log(`New user successfully created - document ID: ${userDocRef.id}`);
-//   } catch (error) {
-//     console.error(`Error creating new document - netId ${netId}: `, error);
-//   }
-// };
-
-// Function to create a new group record in the database
-// Append epNum to groupId to make it unique
 
 // Reset a group to the instructions and first trial
 // Doesn't erase their data

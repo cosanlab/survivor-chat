@@ -4,8 +4,7 @@ This is the first page that a participant sees.
 It asks them to select their Group and Name/NetID.render
 
 [ ] TODO: once logged in, check if currentState in group is equal to 'experiment'
-// if it is, then set userStore to 'experiment' and redirect to Experiment.svelte
-// and call a function to query other group members for their video timestamp
+// if it is, then call a function to query other group members for their video timestamp
 // and sync to the fastest one
 -->
 
@@ -66,10 +65,6 @@ It asks them to select their Group and Name/NetID.render
         await createUserWithEmailAndPassword(auth, email, password);
         await signInWithEmailAndPassword(auth, email, password);
         await checkNetId(groupId, $netId, epNum);
-        // await initUser(groupId, $netId, epNum);
-        // console.log("Login() -- initGroup");
-        // await initGroup(combinedGroupIdEpNum, $netId, epNum);
-        // dispatch("login-success");
       } else {
         console.log("other error");
         console.log("$netId", $netId);

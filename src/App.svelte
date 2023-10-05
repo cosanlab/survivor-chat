@@ -35,7 +35,7 @@
 
   // VARIABLES USED WITHIN App.svelte
   let unsubscribe_user, unsubscribe_group;
-  let unsubscribeUserId, unsubscribeGroupId;
+  let unsubscribeUserId;
 
   // Data updating API explanation:
   // See also database transaction write function in utils.js!
