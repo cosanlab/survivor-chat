@@ -349,8 +349,8 @@ export const initGroup = async (groupId, netId, epNum) => {
 
 
 // add userId to meta counter
-export const reqGroupDocChange = async (userId, groupDocName) => {
-  console.log("reqGroupDocChange -- userId", userId);
+export const reqGroupDocChange = async (netId, groupDocName) => {
+  console.log("reqGroupDocChange -- netId", netId);
   console.log("reqGroupDocChange -- groupDocName", groupDocName);
   const groupDocRef = doc(db, 'survivor-groups', groupDocName);
 
@@ -365,31 +365,31 @@ export const reqGroupDocChange = async (userId, groupDocName) => {
       }
       // Freshest data
       const { counter } = document.data();
-      const data = { counter: [...counter, userId] };
+      const data = { counter: [...counter, netId] };
 
       // Add the user to the counter if they're not already in it
-      if (!counter.includes(userId)) {
+      if (!counter.includes(netId)) {
         await transaction.update(groupDocRef, data);
       } else {
         console.log("Ignoring duplicate request");
       }
     });
   } catch (error) {
-    console.error(`Error updating group doc for userId: ${userId}`, error);
+    console.error(`Error updating group doc for userId: ${netId}`, error);
   }
   // Use helper function to run a second transaction that checks the counter length and
   // actually performs the state change if appropriate
-  await checkIfResetCounter(userId);
+  await checkIfResetCounter(netId, groupDocName);
 };
 
 // helper funtion to run check for meta doc change
 // every time user joins, check if counter is full
-const checkIfResetCounter = async () => {
+const checkIfResetCounter = async (netId, groupDocName) => {
   console.log("checkIfResetCounter");
   // Get latest counter
   let counter;
 
-  const groupDocRef = doc(db, 'survivor-groups', groupId);
+  const groupDocRef = doc(db, 'survivor-groups', groupDocName);
 
   try {
     await runTransaction(db, async (transaction) => {
