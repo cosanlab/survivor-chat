@@ -16,10 +16,9 @@
 
   // app pages and components
   import Login from "./pages/Login.svelte";
-  import RequestFullScreen from "./pages/RequestFullScreen.svelte";
 
-  // Instructions -- Confirm login and waiting for other users to login in shor time window (1 min.)
-  import Instructions from "./pages/Instructions.svelte";
+  // After they full-screen, they are instructed to wait for others to join
+  import RequestFullScreen from "./pages/RequestFullScreen.svelte";
 
   // CountdownTransition to start of experiment
   import CountdownTransition from "./pages/CountdownTransition.svelte";
@@ -28,6 +27,8 @@
   import Experiment from "./pages/Experiment.svelte";
 
   import Debrief from "./pages/Debrief.svelte";
+
+  // "Helper" components
   import Loading from "./components/Loading.svelte";
   import Footer from "./components/Footer.svelte";
 
@@ -185,9 +186,7 @@ determine what page a user should be on. -->
   {:else}
     <!-- Main experiment loop -->
     {#if $groupStore["currentState"] === "request-full-screen"}
-      <RequestFullScreen on:finished={() => updateState("instructions")} />
-    {:else if $groupStore["currentState"] === "instructions"}
-      <Instructions on:finished={() => updateState("instructions")} />
+      <RequestFullScreen on:finished={() => updateState("countdown")} />
     {:else if $groupStore["currentState"] === "countdown"}
       <CountdownTransition on:finished={() => updateState("experiment")} />
     {:else if $groupStore["currentState"] === "experiment"}

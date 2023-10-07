@@ -213,7 +213,7 @@
           </Controls>
         </DefaultUi>
       </Player>
-      Don't forget to click the unmute button in the top-right corner!
+      Click the unmute button in the top-right corner of the video!
     </div>
   </div>
 
