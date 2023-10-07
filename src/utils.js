@@ -335,6 +335,7 @@ export const initGroup = async (groupId, netId, epNum) => {
     try {
       await setDoc(groupDocEpRef, {
         counter: [netId], // initialize counter as empty array - will be updated by reqStateChange()
+        users: [netId], // initialize users as empty array - will be updated by reqStateChange()
         host: netId, // initialize host as first user to join
         groupId: groupId,
         epNum: epNum,
@@ -349,77 +350,17 @@ export const initGroup = async (groupId, netId, epNum) => {
   }
 };
 
+//
 
-// add userId to meta counter
-export const reqGroupDocChange = async (netId, groupDocName) => {
-  console.log("reqGroupDocChange -- netId", netId);
-  console.log("reqGroupDocChange -- groupDocName", groupDocName);
-  const groupDocRef = doc(db, 'survivor-groups', groupDocName);
-
-  // update group doc
-  try {
-    await runTransaction(db, async (transaction) => {
-
-      // Get the latest data, rather than relying on the store
-      const document = await transaction.get(groupDocRef);
-      if (!document.exists()) {
-        throw "Document does not exist!";
-      }
-      // Freshest data
-      const { counter } = document.data();
-      const data = { counter: [...counter, netId] };
-
-      // Add the user to the counter if they're not already in it
-      if (!counter.includes(netId)) {
-        await transaction.update(groupDocRef, data);
-      } else {
-        console.log("Ignoring duplicate request");
-      }
-    });
-  } catch (error) {
-    console.error(`Error updating group doc for userId: ${netId}`, error);
-  }
-  // Use helper function to run a second transaction that checks the counter length and
-  // actually performs the state change if appropriate
-  await checkIfResetCounter(netId, groupDocName);
-};
-
-// helper funtion to run check for meta doc change
-// every time user joins, check if counter is full
-const checkIfResetCounter = async (netId, groupDocName) => {
-  console.log("checkIfResetCounter");
-  // Get latest counter
-  let counter;
-
-  const groupDocRef = doc(db, 'survivor-groups', groupDocName);
-
-  try {
-    await runTransaction(db, async (transaction) => {
-      // Get the latest data, rather than relying on the store
-      const document = await transaction.get(groupDocRef);
-      if (!document.exists()) {
-        throw "Document does not exist!";
-      }
-      // Get latest counter
-      counter = document.data().counter;
-      console.log("checkIfResetCounter -- runTransaction -- counter.length", counter.length);
-
-    });
-  } catch (error) {
-    console.error(`Error verifying group doc change`, error);
-  }
-
-  if (counter.length === globalVars.minGroupSize) {
-    console.log('Initializing group...');
-    // initialize group
-    await initGroup(counter);
-  } else {
-    console.log(`Still waiting for ${globalVars.minGroupSize - counter.length} requests...`);
-  }
-
-};
-
-
+export const syncToGroup = async (groupId) => {
+  const groupDocRef = doc(db, groupsCollectionName, groupId);
+  const groupDocSnapshot = await getDoc(groupDocRef);
+  const groupDocData = groupDocSnapshot.data();
+  console.log("syncToGroup -- groupDocData", groupDocData);
+  const { videoTime } = groupDocData;
+  console.log("syncToGroup -- videoTime", videoTime);
+  return videoTime;
+}
 
 
 
@@ -591,13 +532,18 @@ export const reqStateChange = async (newState) => {
         throw "Document does not exist!";
       }
       // Freshest data
-      const { counter, currentState } = document.data();
+      const { counter, currentState, users } = document.data();
       console.log(
         `Participant: ${userId} is requesting state change: ${currentState} -> ${newState}`
       );
       // Add the user to the counter if they're not already in it
       if (!counter.includes(netId)) {
         await transaction.update(docRef, { counter: [...counter, netId] });
+      } else {
+        console.log("Ignoring duplicate request");
+      }
+      if (!users.includes(netId)) {
+        await transaction.update(docRef, { users: [...users, netId] });
       } else {
         console.log("Ignoring duplicate request");
       }
@@ -629,7 +575,7 @@ const verifyStateChange = async (newState) => {
       // Get latest counter
       const { counter } = document.data();
       // Want there to be at least 3 members present
-      if (counter.length === 3) {
+      if (counter.length === globalVars.minGroupSize) {
         console.log('Last request...initiating state change');
         const obj = {};
         obj["counter"] = [];

@@ -9,12 +9,12 @@
   import { fade } from "svelte/transition";
   import { fly } from "svelte/transition";
   import {
-    db,
     serverTime,
     formatTime,
     userStore,
     groupStore,
     addMessage,
+    syncToGroup,
   } from "../utils.js";
   import {
     Player,
@@ -30,6 +30,7 @@
     PlaybackControl,
     TimeProgress,
   } from "@vime/svelte";
+  import Button from "../components/Button.svelte";
 
   const dispatch = createEventDispatcher();
 
@@ -126,6 +127,15 @@
     dispatch("finished");
   };
 
+  const syncButtonPressed = async () => {
+    console.log("Experiment -- syncButtonPressed");
+    await syncToGroup($groupStore["groupId"]);
+  };
+
+  $: {
+    time = $groupStore["currentVideoTime"];
+  }
+
   // CHAT WINDOW CONTROLS
   // upon new message, autoscroll to bottom of chat window
   const updateScroll = () => {
@@ -213,7 +223,16 @@
           </Controls>
         </DefaultUi>
       </Player>
-      Click the unmute button in the top-right corner of the video!
+      <br />
+      <p>Click the unmute button in the top-right corner of the video!</p>
+      <br />
+      <p>
+        If you feel out-of-sync with the group, click the sync button below:<br
+        /><br />
+        <Button on:click={syncButtonPressed} color={"blue"}
+          >Sync to group</Button
+        >
+      </p>
     </div>
   </div>
 

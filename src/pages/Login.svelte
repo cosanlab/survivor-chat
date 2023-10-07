@@ -15,15 +15,7 @@ It asks them to select their Group and Name/NetID.render
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
   } from "firebase/auth";
-  import {
-    userStore,
-    initUser,
-    userId,
-    checkNetId,
-    initGroup,
-    allNetIds,
-    netId,
-  } from "../utils";
+  import { userId, checkNetId, allNetIds, netId } from "../utils";
   import Button from "../components/Button.svelte";
 
   let groupId, epNum, loginError;
