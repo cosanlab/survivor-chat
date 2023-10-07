@@ -265,7 +265,8 @@ export const initUser = async (groupId, netId, epNum) => {
         groupDocName: combinedGroupIdEpNum, // ${groupId}_${epNum}
         netId: netId,
         epNum: epNum,
-        loggedIn: true
+        loggedIn: true,
+        currentVideoTime: 0, // initialize current video time as 0
       });
     }
     console.log(`'New user ${userId} successfully created with document ID ${userDocRef.id}`)
@@ -334,11 +335,12 @@ export const initGroup = async (groupId, netId, epNum) => {
     try {
       await setDoc(groupDocEpRef, {
         counter: [netId], // initialize counter as empty array - will be updated by reqStateChange()
+        host: netId, // initialize host as first user to join
         groupId: groupId,
         epNum: epNum,
-        currentState: 'countdown', // start group at instructions screen
-        videoTime: 0, // initialize video time as 0
-        lastUser: "", // initialize last user as empty string; will be 4th user if they exist
+        currentState: 'request-full-screen', // start group at instructions screen
+        videoTime: 0, // initialize video time as 0,
+        currentVideoTime: 0, // initialize current video time as 0,
       });
       console.log(`New group ${groupId} successfully created with document ID: ${groupDocEpRef.id}`);
     } catch (error) {

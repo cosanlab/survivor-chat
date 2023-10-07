@@ -179,16 +179,16 @@
 determine what page a user should be on. -->
 <main class="flex flex-col items-center p-10 mx-auto space-y-10 bg-white">
   {#if !$loggedIn}
-    <Login on:finished={() => updateUserState("request-full-screen")} />
-  {:else if $userStore["currentState"] === "request-full-screen"}
-    <RequestFullScreen on:finished={() => updateUserState("instructions")} />
-  {:else if $userStore["currentState"] === "instructions"}
-    <Instructions />
-    <!-- Pages below are when they've entered the experiment 
-      and are in a group. -->
+    <Login />
+  {:else if !$groupStore || !$groupStore["currentState"]}
+    <Loading />
   {:else}
-    <!-- Now in a group -->
-    {#if $groupStore["currentState"] === "countdown"}
+    <!-- Main experiment loop -->
+    {#if $groupStore["currentState"] === "request-full-screen"}
+      <RequestFullScreen on:finished={() => updateState("instructions")} />
+    {:else if $groupStore["currentState"] === "instructions"}
+      <Instructions on:finished={() => updateState("instructions")} />
+    {:else if $groupStore["currentState"] === "countdown"}
       <CountdownTransition on:finished={() => updateState("experiment")} />
     {:else if $groupStore["currentState"] === "experiment"}
       <Experiment on:finished={() => updateState("debrief")} />

@@ -13,31 +13,41 @@
   import { createEventDispatcher } from "svelte";
   import { userId, globalVars } from "../utils.js";
   import Button from "../components/Button.svelte";
+  import Loading from "../components/Loading.svelte";
+
   const dispatch = createEventDispatcher();
 
+  let submitted = false;
   const userRequestFullscreen = async () => {
     if (!globalVars.DEBUG_MODE) {
       await document.documentElement.requestFullscreen();
     }
+    submitted = true;
     dispatch("finished");
   };
 </script>
 
-<div class="flex flex-col items-center justify-center h-screen">
-  <h1 class="mb-4 text-3xl">Please enter fullscreen mode!</h1>
-  <h2>Hi <b>{$userId}</b>!</h2>
-  <br />
-  <p class="w-3/4 mb-2 text-center">
-    We kindly request you to click the button below to enter fullscreen mode in
-    order to participate in this study. Please remain in fullscreen mode
-    throughout the entire duration of the study.
-    <br /><br />
-    If the button doesn't work, you can achieve fullscreen by resizing your window
-    manually.
+{#if submitted}
+  <Loading
+    text={"Please wait for at least 2 other group members to login..."}
+  />
+{:else}
+  <div class="flex flex-col items-center justify-center h-screen">
+    <h1 class="mb-4 text-3xl">Please enter fullscreen mode!</h1>
+    <h2>Hi <b>{$userId}</b>!</h2>
     <br />
-    Thank you for your cooperation.
-  </p>
-  <br />
-  <Button on:click={userRequestFullscreen}>Enter Fullscreen Mode</Button>
-  <br />
-</div>
+    <p class="w-3/4 mb-2 text-center">
+      We kindly request you to click the button below to enter fullscreen mode
+      in order to participate in this study. Please remain in fullscreen mode
+      throughout the entire duration of the study.
+      <br /><br />
+      If the button doesn't work, you can achieve fullscreen by resizing your window
+      manually.
+      <br />
+      Thank you for your cooperation.
+    </p>
+    <br />
+    <Button on:click={userRequestFullscreen}>Enter Fullscreen Mode</Button>
+    <br />
+  </div>
+{/if}
