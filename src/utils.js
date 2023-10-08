@@ -232,9 +232,9 @@ export const formatTime = (seconds) => {
 export const initUser = async (groupId, netId, epNum) => {
   try {
     // specify userId to include the specific group they are in and the episode number they're watching
-    const userId = `${groupId}_${netId}_${epNum}`;
+    const userId = `${groupId}_${epNum}_${netId}`;
     console.log("initUser -- userId", userId);
-    let email = `${groupId}_${netId}_${epNum}@experiment.com`;
+    let email = `${groupId}_${epNum}_${netId}@experiment.com`;
     console.log("initUser -- groupId", groupId);
     console.log("initUser -- netId", netId);
     console.log("initUser -- epNum", epNum);
@@ -335,13 +335,14 @@ export const initGroup = async (groupId, netId, epNum) => {
     try {
       await setDoc(groupDocEpRef, {
         counter: [netId], // initialize counter as empty array - will be updated by reqStateChange()
-        users: [netId], // initialize users as empty array - will be updated by reqStateChange()
+        users: [], // initialize users as empty array - will be updated by reqStateChange()
         host: netId, // initialize host as first user to join
         groupId: groupId,
         epNum: epNum,
+        logVideoTimestamp: false,
         currentState: 'request-full-screen', // start group at instructions screen
         videoTime: 0, // initialize video time as 0,
-        currentVideoTime: 0, // initialize current video time as 0,
+        currentVideoTimes: [], // initialize current video time as 0,
       });
       console.log(`New group ${groupId} successfully created with document ID: ${groupDocEpRef.id}`);
     } catch (error) {
@@ -350,16 +351,32 @@ export const initGroup = async (groupId, netId, epNum) => {
   }
 };
 
-//
+// Someone in the group is asking where everyone else is in the video
+export const queryGroupTimestamps = async (groupMembers) => {
+  console.log("queryGroupTimestamps -- groupMembers", groupMembers);
 
-export const syncToGroup = async (groupId) => {
-  const groupDocRef = doc(db, groupsCollectionName, groupId);
-  const groupDocSnapshot = await getDoc(groupDocRef);
-  const groupDocData = groupDocSnapshot.data();
-  console.log("syncToGroup -- groupDocData", groupDocData);
-  const { videoTime } = groupDocData;
-  console.log("syncToGroup -- videoTime", videoTime);
-  return videoTime;
+  // For each netId in the group, get their current video time
+  for (let i = 0; i < groupMembers.length; i++) {
+    let netId = groupMembers[i];
+    console.log("queryGroupTimestamps -- netId", netId);
+
+    // We could have just tried to read the value of the $userId store here, but the $
+    // syntax only works in .svelte files. There's a special get() function we have to
+    // use instead, but because this is such simple case let's just make the userId like
+    // we do in Login.svelte and avoid the overhead.
+    const userDocRef = doc(db, participantsCollectionName, netId);
+
+    // Set logVideoTimestamp to true in userDoc
+    await updateDoc(userDocRef, {
+      logVideoTimestamp: true
+    });
+  }
+
+  // const groupDocRef = doc(db, participantsCollectionName, groupId);
+  // const groupDocSnapshot = await getDoc(groupDocRef);
+  // const groupDocData = groupDocSnapshot.data();
+  // console.log("syncToGroup -- groupDocData", groupDocData);
+  
 }
 
 
@@ -532,18 +549,20 @@ export const reqStateChange = async (newState) => {
         throw "Document does not exist!";
       }
       // Freshest data
-      const { counter, currentState, users } = document.data();
+      const { counter, currentState, users, groupId, epNum } = document.data();
       console.log(
         `Participant: ${userId} is requesting state change: ${currentState} -> ${newState}`
       );
+      let fullId = `${groupId}_${netId}`;
+
       // Add the user to the counter if they're not already in it
       if (!counter.includes(netId)) {
         await transaction.update(docRef, { counter: [...counter, netId] });
       } else {
         console.log("Ignoring duplicate request");
       }
-      if (!users.includes(netId)) {
-        await transaction.update(docRef, { users: [...users, netId] });
+      if (!users.includes(fullId)) {
+        await transaction.update(docRef, { users: [...users, fullId] });
       } else {
         console.log("Ignoring duplicate request");
       }

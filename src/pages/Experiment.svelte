@@ -2,6 +2,8 @@
 
  TODO: ADD VIDEO + CHAT APP HERE
  [ ] TODO: client listens for updates in messages field
+ [ ] TODO: client listens for updates in currentVideoTime field
+ 
 -->
 
 <script>
@@ -14,7 +16,9 @@
     userStore,
     groupStore,
     addMessage,
-    syncToGroup,
+    queryGroupTimestamps,
+    // updateGroupTimestamp,
+    userId,
   } from "../utils.js";
   import {
     Player,
@@ -35,22 +39,63 @@
   const dispatch = createEventDispatcher();
 
   // video-specific
-  const hlsConfig = {
-    debug: false,
-    enableWorker: true,
-    lowLatencyMode: true,
-    backBufferLength: 90,
-  };
-  console.log("hlsConfig", hlsConfig);
+  // const hlsConfig = {
+  //   debug: false,
+  //   enableWorker: true,
+  //   lowLatencyMode: true,
+  //   backBufferLength: 90,
+  // };
+  // console.log("hlsConfig", hlsConfig);
   console.log("userStore", $userStore["userId"]);
   console.log("groupStore", $groupStore["groupId"]);
 
   let player;
   let paused = false;
   let time = 0;
+  let logVideoTimestamp = false;
 
-  const onTimeUpdate = (event) => {
+  const handleLogVideoTimestampChange = (value) => {
+    if (value === true) {
+      console.log(
+        "Experiment -- handleLogVideoTimestampChange -- value",
+        value
+      );
+      console.log("Experiment -- handleLogVideoTimestampChange -- time", time);
+      // update group timestamp
+      $userStore["currentVideoTime"] = time;
+      // Set field back to false
+      $userStore["logVideoTimestamp"] = false;
+    }
+  };
+
+  const unsubscribe = userStore.subscribe((value) => {
+    handleLogVideoTimestampChange(value["logVideoTimestamp"]);
+  });
+
+  $: {
+    logVideoTimestamp = $userStore["logVideoTimestamp"];
+    // time = $groupStore["currentVideoTime"];
+  }
+
+  const onTimeUpdate = async (event) => {
     time = event.detail;
+    // $userStore["currentVideoTime"] = time;
+
+    // await updateGroupTimestamp($groupStore["groupId"], time);
+
+    // console.log(
+    //   "Experiment -- $userStore['currentVideoTime']",
+    //   $userStore["currentVideoTime"]
+    // );
+    // $groupStore["currentVideoTime"] = time;
+    // $userStore["logVideoTimestamp"] = false;
+
+    // if ($userStore["logVideoTimestamp"]) {
+    //   console.log("Experiment -- logVideoTimestamp", logVideoTimestamp);
+    //   console.log("Experiment -- onTimeUpdate -- time", time);
+    //   // update group timestamp
+    //   $userStore["currentVideoTime"] = time;
+    // }
     // console.log("onTimeUpdate", time);
   };
 
@@ -127,14 +172,18 @@
     dispatch("finished");
   };
 
+  // SYNC BUTTON CONTROLS
+  // once user clicks sync button,
+  // we call a function to have each user in group logs their timestamp into the store
+  // each user should be listening for when this function is called to then call a function
+  // to log their timestamp into the store
   const syncButtonPressed = async () => {
     console.log("Experiment -- syncButtonPressed");
-    await syncToGroup($groupStore["groupId"]);
+    // get group timestamps
+    let groupMembers = $groupStore["users"];
+    console.log("Experiment -- groupMembers", groupMembers);
+    await queryGroupTimestamps(groupMembers);
   };
-
-  $: {
-    time = $groupStore["currentVideoTime"];
-  }
 
   // CHAT WINDOW CONTROLS
   // upon new message, autoscroll to bottom of chat window

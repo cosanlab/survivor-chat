@@ -23,11 +23,11 @@ It asks them to select their Group and Name/NetID.render
   const dispatch = createEventDispatcher();
 
   const login = async () => {
-    console.log("Login -- login -- async -- netId", $netId);
+    console.log("Login -- login -- netId", $netId);
     const auth = getAuth();
     let netIdForEmail = $netId;
-    let fullId = `${groupId}_${netIdForEmail}_${epNum}`;
-    let email = `${groupId}_${netIdForEmail}_${epNum}@experiment.com`;
+    let fullId = `${groupId}_${epNum}_${netIdForEmail}`;
+    let email = `${groupId}_${epNum}_${netIdForEmail}@experiment.com`;
     console.log("Login -- fullId", fullId);
     console.log("Login -- email", email);
 
