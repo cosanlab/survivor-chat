@@ -129,8 +129,8 @@
                 // always looking to check if they've been assigned to a group
                 const groupId = userDoc.data()?.groupId;
                 const epNum = userDoc.data()?.epNum;
-                console.log("groupId", groupId);
-                console.log("epNum", epNum);
+                // console.log("groupId", groupId);
+                // console.log("epNum", epNum);
                 const combinedGroupIdEpNum = `${groupId}_${epNum}`;
 
                 if (groupId != "") {
@@ -142,20 +142,20 @@
                     }
                   );
 
-                  unsubscribeUserId = userId.subscribe((value) => {
-                    // This callback will be called whenever the userId store value changes
-                    console.log(
-                      `User ${value} subbed to group ${combinedGroupIdEpNum} data`
-                    );
-                  });
+                  // unsubscribeUserId = userId.subscribe((value) => {
+                  //   // This callback will be called whenever the userId store value changes
+                  //   console.log(
+                  //     `User ${value} subbed to group ${combinedGroupIdEpNum} data`
+                  //   );
+                  // });
                 }
               } else {
                 console.log("userDoc does not exist");
               }
-              unsubscribeUserId = userId.subscribe((value) => {
-                // This callback will be called whenever the userId store value changes
-                console.log(`User ${value} subbed to user data`);
-              });
+              // unsubscribeUserId = userId.subscribe((value) => {
+              //   // This callback will be called whenever the userId store value changes
+              //   console.log(`User ${value} subbed to user data`);
+              // });
             }
           );
         } catch (error) {

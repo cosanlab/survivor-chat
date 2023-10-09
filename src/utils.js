@@ -351,32 +351,105 @@ export const initGroup = async (groupId, netId, epNum) => {
   }
 };
 
-// Someone in the group is asking where everyone else is in the video
-export const queryGroupTimestamps = async (groupMembers) => {
+// Log user's video timestamps to their user doc
+export const updateUserTimestamp = async (userId, newTimestamp) => {
+  // console.log("updateUserTimestamp -- userId", userId);
+  // console.log("updateUserTimestamp -- vidTimeStamp", vidTimeStamp);
+
+  const userDocRef = doc(db, participantsCollectionName, userId);
+
+  await runTransaction(db, async (transaction) => {
+      // Get the latest data, rather than relying on the store
+      const document = await transaction.get(userDocRef);
+      if (!document.exists()) {
+        throw "Document does not exist!";
+      }
+      // Freshest data
+      const { videoTime } = document.data();
+    
+      if (newTimestamp > videoTime) {
+
+      // Write user's video timestamp to group doc
+      await updateDoc(userDocRef, {
+        videoTime: newTimestamp
+      });
+  }
+  });
+
+
+  
+}
+
+// Log host user's video timestamp to the group doc
+export const updateGroupTimestamp = async (groupId, userId, vidTimeStamp) => {
+  // console.log("updateGroupTimestamp -- groupId", groupId);
+  // console.log("updateGroupTimestamp -- userId", userId);
+  // console.log("updateGroupTimestamp -- vidTimeStamp", vidTimeStamp);
+
+  const groupDocRef = doc(db, groupsCollectionName, groupId);
+
+  // Write host user's video timestamp to group doc
+  await updateDoc(groupDocRef, {
+    videoTime: vidTimeStamp
+  });
+}
+
+// Set each user's logVideoTimestamp to true
+export const setUserToLogTimestamp = async (groupMembers, booleanValue) => {
+  // Iterate through groupMembers array
+  for (let i = 0; i < groupMembers.length; i++) {
+    console.log("groupMembers[i]", groupMembers[i]);
+    // Create user doc ref
+    const userDocRef = doc(db, participantsCollectionName, groupMembers[i]);
+
+    // Write host user's video timestamp to group doc
+    await updateDoc(userDocRef, {
+      logVideoTimestamp: booleanValue
+    });
+  }
+}
+
+
+
+// Query everyone in group's video timestamps
+// then return the highest number
+// to then set the video time to that number
+// in Experiment.svelte
+export const queryGroupTimestamps = async (groupId, groupMembers) => {
+  console.log("queryGroupTimestamps -- groupId", groupId);
   console.log("queryGroupTimestamps -- groupMembers", groupMembers);
 
-  // For each netId in the group, get their current video time
+  // Iterate through groupMembers array
+  // and query each user's video timestamp
+  // by reading their user doc
+  // then push each video timestamp to an array
+  // then return the highest number in the array
+
+  // Create empty array to store video timestamps
+  let videoTimes = [];
+
+  // Iterate through groupMembers array
   for (let i = 0; i < groupMembers.length; i++) {
-    let netId = groupMembers[i];
-    console.log("queryGroupTimestamps -- netId", netId);
+    console.log("groupMembers[i]", groupMembers[i]);
+    // Create user doc ref
+    const userDocRef = doc(db, participantsCollectionName, groupMembers[i]);
 
-    // We could have just tried to read the value of the $userId store here, but the $
-    // syntax only works in .svelte files. There's a special get() function we have to
-    // use instead, but because this is such simple case let's just make the userId like
-    // we do in Login.svelte and avoid the overhead.
-    const userDocRef = doc(db, participantsCollectionName, netId);
+    await runTransaction(db, async (transaction) => {
+      // Get the latest data, rather than relying on the store
+      const document = await transaction.get(userDocRef);
+      if (!document.exists()) {
+        throw "Document does not exist!";
+      }
+      // Freshest data
+      const { videoTime } = document.data();
+      // Push user's video timestamp to videoTimes array
+      videoTimes.push(videoTime);
 
-    // Set logVideoTimestamp to true in userDoc
-    await updateDoc(userDocRef, {
-      logVideoTimestamp: true
     });
   }
 
-  // const groupDocRef = doc(db, participantsCollectionName, groupId);
-  // const groupDocSnapshot = await getDoc(groupDocRef);
-  // const groupDocData = groupDocSnapshot.data();
-  // console.log("syncToGroup -- groupDocData", groupDocData);
-  
+  // Return the highest number in the array
+  return Math.max(...videoTimes);
 }
 
 

@@ -16,9 +16,9 @@
     userStore,
     groupStore,
     addMessage,
+    setUserToLogTimestamp,
+    updateUserTimestamp,
     queryGroupTimestamps,
-    // updateGroupTimestamp,
-    userId,
   } from "../utils.js";
   import {
     Player,
@@ -46,57 +46,26 @@
   //   backBufferLength: 90,
   // };
   // console.log("hlsConfig", hlsConfig);
-  console.log("userStore", $userStore["userId"]);
-  console.log("groupStore", $groupStore["groupId"]);
+  // console.log("userStore", $userStore["userId"]);
+  // console.log("groupStore", $groupStore["groupId"]);
 
   let player;
   let paused = false;
   let time = 0;
-  let logVideoTimestamp = false;
-
-  const handleLogVideoTimestampChange = (value) => {
-    if (value === true) {
-      console.log(
-        "Experiment -- handleLogVideoTimestampChange -- value",
-        value
-      );
-      console.log("Experiment -- handleLogVideoTimestampChange -- time", time);
-      // update group timestamp
-      $userStore["currentVideoTime"] = time;
-      // Set field back to false
-      $userStore["logVideoTimestamp"] = false;
-    }
-  };
-
-  const unsubscribe = userStore.subscribe((value) => {
-    handleLogVideoTimestampChange(value["logVideoTimestamp"]);
-  });
-
-  $: {
-    logVideoTimestamp = $userStore["logVideoTimestamp"];
-    // time = $groupStore["currentVideoTime"];
-  }
 
   const onTimeUpdate = async (event) => {
     time = event.detail;
-    // $userStore["currentVideoTime"] = time;
 
-    // await updateGroupTimestamp($groupStore["groupId"], time);
+    // await updateUserTimestamp($userStore["userId"], time);
 
-    // console.log(
-    //   "Experiment -- $userStore['currentVideoTime']",
-    //   $userStore["currentVideoTime"]
-    // );
-    // $groupStore["currentVideoTime"] = time;
-    // $userStore["logVideoTimestamp"] = false;
-
-    // if ($userStore["logVideoTimestamp"]) {
-    //   console.log("Experiment -- logVideoTimestamp", logVideoTimestamp);
-    //   console.log("Experiment -- onTimeUpdate -- time", time);
-    //   // update group timestamp
-    //   $userStore["currentVideoTime"] = time;
+    // if ($groupStore["host"] == $userStore["netId"]) {
+    //   console.log("WE ARE THE HOST!");
+    //   await updateGroupTimestamp(
+    //     $groupStore["groupId"],
+    //     $userStore["userId"],
+    //     time
+    //   );
     // }
-    // console.log("onTimeUpdate", time);
   };
 
   // emoji menu
@@ -172,17 +141,64 @@
     dispatch("finished");
   };
 
+  $: {
+    if ($userStore["logVideoTimestamp"] == true) {
+      console.log("logVideoTimestamp is TRUE");
+      makeUserUpdateTimestamp();
+      getHighestTimestamp();
+
+      // set back to false
+      makeUserLogTimestamp(false);
+      // $userStore["logVideoTimestamp"] = false;
+    }
+  }
+
   // SYNC BUTTON CONTROLS
   // once user clicks sync button,
   // we call a function to have each user in group logs their timestamp into the store
   // each user should be listening for when this function is called to then call a function
   // to log their timestamp into the store
   const syncButtonPressed = async () => {
-    console.log("Experiment -- syncButtonPressed");
+    // console.log("Experiment -- syncButtonPressed");
     // get group timestamps
     let groupMembers = $groupStore["users"];
-    console.log("Experiment -- groupMembers", groupMembers);
-    await queryGroupTimestamps(groupMembers);
+    // let groupId = $userStore["groupId"];
+
+    // Set each user in group's log timestamp to true
+    await setUserToLogTimestamp(groupMembers, true);
+
+    // Find way for all users to log their timestamp
+    // await updateUserTimestamp($userStore["userId"], time);
+
+    // console.log("Experiment -- groupId", groupId);
+    // console.log("Experiment -- groupMembers", groupMembers);
+    // let highestTimestamp = await queryGroupTimestamps(groupId, groupMembers);
+    // console.log("Experiment -- highestTimestamp", highestTimestamp);
+    // time = highestTimestamp;
+  };
+
+  // call user to update timestamp
+  const makeUserUpdateTimestamp = async () => {
+    await updateUserTimestamp($userStore["userId"], time);
+  };
+
+  const makeUserLogTimestamp = async (booleanValue) => {
+    await setUserToLogTimestamp($groupStore["users"], booleanValue);
+  };
+
+  // Goes through each group member's user doc and returns the highest timestamp
+  // then sets that to the user's video time
+  // then sets the user's logVideoTimestamp to false
+  const getHighestTimestamp = async () => {
+    let groupMembers = $groupStore["users"];
+    let groupId = $userStore["groupId"];
+
+    let highestTimestamp = await queryGroupTimestamps(groupId, groupMembers);
+    console.log("Experiment -- highestTimestamp", highestTimestamp);
+    time = highestTimestamp;
+
+    // // Set back to false
+    // setUserToLogTimestamp($groupStore["users"], false);
   };
 
   // CHAT WINDOW CONTROLS
