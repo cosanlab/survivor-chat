@@ -4,7 +4,7 @@
     <img src="survivor-logo.webp" width="200" />
 </p>
 
-- Synchronous video-watching and chat app platform for Luke's PSYC53 class.
+- Server-less synchronous video-watching and chat app platform for Luke's PSYC53 class.
 - Stimuli: Survivor (Season 28)
 
 ## Tech Stack
