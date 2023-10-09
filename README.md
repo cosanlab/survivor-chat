@@ -12,6 +12,7 @@
 - Firebase (<https://firebase.google.com>) - for database & hosting
 - Svelte (<https://svelte.dev>) - for frontend framework
 - TailwindCSS (<https://tailwindcss.com>) - for styling
+- Vime (<https://vimejs.com>) - for customizable video player
 
 ## Development & Deployment
 

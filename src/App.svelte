@@ -1,6 +1,6 @@
 <script>
   import { onAuthStateChanged } from "firebase/auth";
-  import { doc, updateDoc, onSnapshot } from "firebase/firestore";
+  import { doc, onSnapshot } from "firebase/firestore";
   import { onMount } from "svelte";
   import {
     auth,
@@ -9,17 +9,16 @@
     groupStore,
     loggedIn,
     userId,
-    initUser,
     resetGroupData,
     reqStateChange,
-    serverTime,
+    reqUserStateChange,
   } from "./utils.js";
 
   // app pages and components
   import Login from "./pages/Login.svelte";
 
-  // Instructions -- Confirm login and waiting for other users to login in shor time window (1 min.)
-  import Instructions from "./pages/Instructions.svelte";
+  // After they full-screen, they are instructed to wait for others to join
+  import RequestFullScreen from "./pages/RequestFullScreen.svelte";
 
   // CountdownTransition to start of experiment
   import CountdownTransition from "./pages/CountdownTransition.svelte";
@@ -28,14 +27,16 @@
   import Experiment from "./pages/Experiment.svelte";
 
   import Debrief from "./pages/Debrief.svelte";
+
+  // "Helper" components
   import Loading from "./components/Loading.svelte";
   import Footer from "./components/Footer.svelte";
 
   // TODO: Add LogRocket
 
   // VARIABLES USED WITHIN App.svelte
-  let unsubscribe_user, unsubscribe_group;
-  let unsubscribeUserId, unsubscribeGroupId;
+  let unsubscribe_user, unsubscribe_group, unsubscribe_meta;
+  let unsubscribeUserId;
 
   // Data updating API explanation:
   // See also database transaction write function in utils.js!
@@ -67,7 +68,23 @@
   // their UI at approx the same time as the other users.
   //
 
+  // Update user state
+  const updateUserState = async (newState) => {
+    console.log(
+      "App -- updateUserState -- currentState",
+      $userStore["currentState"]
+    );
+    console.log("App -- updateUserState -- newState", newState);
+    await reqUserStateChange(newState);
+  };
+
+  // Update group state
   const updateState = async (newState) => {
+    console.log(
+      "App -- updateState -- currentState",
+      $groupStore["currentState"]
+    );
+    console.log("App -- updateState -- newState", newState);
     await reqStateChange(newState);
   };
 
@@ -84,9 +101,11 @@
         $loggedIn = false;
         if (unsubscribe_user) {
           unsubscribe_user();
+          unsubscribe_user = null;
         }
         if (unsubscribe_group) {
           unsubscribe_group();
+          unsubscribe_group = null;
         }
       } else {
         // Set the userId store to the value on their local computer because if they're
@@ -97,7 +116,7 @@
         // computer.
         $userId = localStorage.getItem("userId");
         $loggedIn = true;
-        console.log(`participant ${$userId} signed-in. Loading data...`);
+        console.log(`User ${$userId} signed-in. Loading data...`);
         try {
           // Subscribe to their user doc
           unsubscribe_user = onSnapshot(
@@ -110,8 +129,6 @@
                 // always looking to check if they've been assigned to a group
                 const groupId = userDoc.data()?.groupId;
                 const epNum = userDoc.data()?.epNum;
-                console.log("groupId", groupId);
-                console.log("epNum", epNum);
                 const combinedGroupIdEpNum = `${groupId}_${epNum}`;
 
                 if (groupId != "") {
@@ -123,20 +140,22 @@
                     }
                   );
 
-                  unsubscribeUserId = userId.subscribe((value) => {
-                    // This callback will be called whenever the userId store value changes
-                    console.log(
-                      `User ${value} subbed to group ${combinedGroupIdEpNum} data`
-                    );
-                  });
+                  // Also subscribe to their meta doc
+                  // unsubscribe_meta = onSnapshot(
+                  //   doc(db, "survivor-meta", groupId),
+                  //   (metaDoc) => {
+                  //     metaDoc.set(metaDoc.data());
+                  //   }
+                  // );
                 }
               } else {
                 console.log("userDoc does not exist");
               }
-              unsubscribeUserId = userId.subscribe((value) => {
-                // This callback will be called whenever the userId store value changes
-                console.log(`User ${value} subbed to user data`);
-              });
+
+              // unsubscribeUserId = userId.subscribe((value) => {
+              //   // This callback will be called whenever the userId store value changes
+              //   console.log(`User ${value} subbed to user data`);
+              // });
             }
           );
         } catch (error) {
@@ -145,21 +164,36 @@
       }
     });
   });
+
+  console.log(
+    "App.svelte -- userStore['currentState']",
+    $userStore["currentState"]
+  );
+
+  console.log(
+    "App.svelte -- groupStore['currentState']",
+    $groupStore["currentState"]
+  );
 </script>
 
 <!-- This is our main markup. It uses the currentState field of the userStore to
 determine what page a user should be on. -->
-<main class="flex flex-col items-center h-screen p-10 space-y-10">
+<main class="flex flex-col items-center p-10 mx-auto space-y-10 bg-white">
   {#if !$loggedIn}
-    <Login on:login-success={() => updateState("instructions")} />
-  {:else if $userStore["currentState"] === "instructions"}
-    <Instructions on:to-experiment={() => updateState("countdown")} />
-  {:else if $userStore["currentState"] === "countdown"}
-    <CountdownTransition on:to-experiment={() => updateState("experiment")} />
-  {:else if $groupStore["currentState"] === "experiment"}
-    <Experiment on:finished={() => updateState("debrief")} />
-  {:else if $groupStore["currentState"] === "debrief"}
-    <Debrief />
+    <Login />
+  {:else if !$groupStore || !$groupStore["currentState"]}
+    <Loading />
+  {:else}
+    <!-- Main experiment loop -->
+    {#if $groupStore["currentState"] === "request-full-screen"}
+      <RequestFullScreen on:finished={() => updateState("countdown")} />
+    {:else if $groupStore["currentState"] === "countdown"}
+      <CountdownTransition on:finished={() => updateState("experiment")} />
+    {:else if $groupStore["currentState"] === "experiment"}
+      <Experiment on:finished={() => updateState("debrief")} />
+    {:else if $groupStore["currentState"] === "debrief"}
+      <Debrief />
+    {/if}
   {/if}
 </main>
 <Footer />

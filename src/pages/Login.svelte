@@ -4,8 +4,7 @@ This is the first page that a participant sees.
 It asks them to select their Group and Name/NetID.render
 
 [ ] TODO: once logged in, check if currentState in group is equal to 'experiment'
-// if it is, then set userStore to 'experiment' and redirect to Experiment.svelte
-// and call a function to query other group members for their video timestamp
+// if it is, then call a function to query other group members for their video timestamp
 // and sync to the fastest one
 -->
 
@@ -16,30 +15,19 @@ It asks them to select their Group and Name/NetID.render
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
   } from "firebase/auth";
-  import {
-    userStore,
-    initUser,
-    userId,
-    checkNetId,
-    initGroup,
-    metaStore,
-    allNetIds,
-    netId,
-  } from "../utils";
+  import { userId, checkNetId, allNetIds, netId } from "../utils";
   import Button from "../components/Button.svelte";
 
   let groupId, epNum, loginError;
   const password = "cosanlab";
   const dispatch = createEventDispatcher();
 
-  console.log("metaStore", $metaStore);
-
   const login = async () => {
-    console.log("Login -- login -- async -- netId", $netId);
+    console.log("Login -- login -- netId", $netId);
     const auth = getAuth();
     let netIdForEmail = $netId;
-    let fullId = `${groupId}_${netIdForEmail}_${epNum}`;
-    let email = `${groupId}_${netIdForEmail}_${epNum}@experiment.com`;
+    let fullId = `${groupId}_${epNum}_${netIdForEmail}`;
+    let email = `${groupId}_${epNum}_${netIdForEmail}@experiment.com`;
     console.log("Login -- fullId", fullId);
     console.log("Login -- email", email);
 
@@ -68,10 +56,7 @@ It asks them to select their Group and Name/NetID.render
         console.log("no participant found...creating new account");
         await createUserWithEmailAndPassword(auth, email, password);
         await signInWithEmailAndPassword(auth, email, password);
-        // await initUser(groupId, $netId, epNum);
-        // console.log("Login() -- initGroup");
-        // await initGroup(combinedGroupIdEpNum, $netId, epNum);
-        // dispatch("login-success");
+        await checkNetId(groupId, $netId, epNum);
       } else {
         console.log("other error");
         console.log("$netId", $netId);
@@ -81,6 +66,7 @@ It asks them to select their Group and Name/NetID.render
         console.error(error);
       }
     }
+    dispatch("finished");
   };
 </script>
 

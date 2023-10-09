@@ -1,6 +1,6 @@
 {
-  "name": "create-svelte-experiment",
-  "version": "0.0.0",
+  "name": "survivor-chat",
+  "version": "0.0.1-alpha",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -16,6 +16,8 @@
     "vite": "^2.6.4"
   },
   "dependencies": {
+    "@vime/core": "^5.3.3",
+    "@vime/svelte": "^5.3.3",
     "firebase": "^9.6.4"
   }
 }
