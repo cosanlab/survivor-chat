@@ -164,11 +164,9 @@ export const checkNetId = async (groupId, netId, epNum) => {
   const docSnap = await getDoc(docRef);
   const docData = docSnap.data(); // get doc data as an object
   const membersMap = docData.members; // get members map
-  console.log("membersMap", membersMap)
   
   // Create a computed property to combine epNum and groupId
   let combinedGroupIdEpNum = `${groupId}_${epNum}`;
-  console.log("combinedGroupIdEpNum", combinedGroupIdEpNum)
 
   let membersMapValues = Object.values(membersMap);
 
@@ -415,7 +413,7 @@ export const updateGroupTimestamp = async (groupId, userId, vidTimeStamp) => {
 export const setUserToLogTimestamp = async (groupMembers, booleanValue) => {
   // Iterate through groupMembers array
   for (let i = 0; i < groupMembers.length; i++) {
-    console.log("groupMembers[i]", groupMembers[i]);
+    // console.log("groupMembers[i]", groupMembers[i]);
     // Create user doc ref
     const userDocRef = doc(db, participantsCollectionName, groupMembers[i]);
 
@@ -447,7 +445,6 @@ export const queryGroupTimestamps = async (groupId, groupMembers) => {
 
   // Iterate through groupMembers array
   for (let i = 0; i < groupMembers.length; i++) {
-    console.log("groupMembers[i]", groupMembers[i]);
     // Create user doc ref
     const userDocRef = doc(db, participantsCollectionName, groupMembers[i]);
 
@@ -533,6 +530,11 @@ export const getGroupMessages = async (groupId) => {
 
   try {
     const querySnapshot = await getDocs(messagesQuery);
+      // Convert the query snapshot to an array of message objects
+    // const messages = [];
+    // querySnapshot.forEach((doc) => {
+    //   messages.push(doc.data());
+    // });
     const messages = querySnapshot.docs.map((doc) => doc.data());
     
     // Now 'messages' contains an array of message objects from the collection

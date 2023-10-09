@@ -122,9 +122,24 @@
     message_string: `Server: You have joined the chat as ${avatar}`,
   };
 
-  let messages = [greeting];
-  console.log("greeting messages", messages);
+  const callGetGroupMessages = async () => {
+    let groupId = $groupStore["groupId"];
+    let groupMessages = await getGroupMessages(groupId);
+    console.log("groupMessages", groupMessages);
 
+    return groupMessages;
+  };
+
+  let messages = [greeting];
+  let groupMessages = callGetGroupMessages();
+  console.log("greeting messages", groupMessages);
+  console.log("messages", messages);
+
+  console.log(getGroupMessages($groupStore["groupId"]));
+  // let messages = callGetGroupMessages();
+  // console.log("messages", messages);
+
+  // let messages = [];
   let message = {
     author: `${avatar}`,
     absolute_timestamp: serverTime,
@@ -139,9 +154,6 @@
     dispatch("finished");
   };
 
-  let groupMsgs = $groupStore["messages"];
-  console.log("groupMessages", groupMsgs);
-
   $: {
     if ($userStore["logVideoTimestamp"] == true) {
       makeUserUpdateTimestamp();
@@ -151,7 +163,6 @@
       makeUserLogTimestamp(false);
       // $userStore["logVideoTimestamp"] = false;
     }
-    // messages = getGroupMessages($groupStore["groupId"]);
   }
 
   // SYNC BUTTON CONTROLS
@@ -224,9 +235,15 @@
       message_string: `${avatar}: ${message.message_string}`,
     };
     console.log("messageObj", messageObj);
+    let groupMessages = await getGroupMessages($groupStore["groupId"]);
+    console.log("groupMessages", groupMessages);
+    // messages = [...messages, messageObj, groupMessages];
+    messages = groupMessages;
 
-    // update client sender UI
-    // messages = getGroupMessages($groupStore["groupId"]);
+    // messages = callGetGroupMessages();
+    console.log("updated messages list", messages);
+
+    // messages = g;
     // console.log("updated messages list", messages);
     // console.log("get group msgs", getGroupMessages($groupStore["groupId"]));
 
@@ -240,6 +257,7 @@
 
   onMount(() => {
     syncButtonPressed();
+    groupMessages = callGetGroupMessages();
   });
 </script>
 
@@ -310,6 +328,7 @@
     <div id="chatWindow">
       <ul id="messages">
         {#each messages as message}
+          <!-- {#each Object.keys(groupMessages) as index} -->
           <!-- Styling message when sent from user -->
           {#if message.author === `${avatar}`}
             <li transition:fade>{message.message_string}</li>
