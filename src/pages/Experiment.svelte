@@ -7,7 +7,7 @@
 -->
 
 <script>
-  import { createEventDispatcher } from "svelte";
+  import { createEventDispatcher, onMount } from "svelte";
   import { fade } from "svelte/transition";
   import { fly } from "svelte/transition";
   import {
@@ -139,10 +139,6 @@
     dispatch("finished");
   };
 
-  let groupDocMessages;
-
-  getGroupMessages($groupStore["groupId"]);
-
   let groupMsgs = $groupStore["messages"];
   console.log("groupMessages", groupMsgs);
 
@@ -155,7 +151,7 @@
       makeUserLogTimestamp(false);
       // $userStore["logVideoTimestamp"] = false;
     }
-    groupDocMessages = $groupStore["messages"];
+    // messages = getGroupMessages($groupStore["groupId"]);
   }
 
   // SYNC BUTTON CONTROLS
@@ -230,8 +226,9 @@
     console.log("messageObj", messageObj);
 
     // update client sender UI
-    messages = messages.concat(messageObj);
-    console.log("updated messages list", messages);
+    // messages = getGroupMessages($groupStore["groupId"]);
+    // console.log("updated messages list", messages);
+    // console.log("get group msgs", getGroupMessages($groupStore["groupId"]));
 
     // add message to the
     await addMessage($groupStore["groupId"], messageObj);
@@ -240,6 +237,10 @@
     message.message_string = "";
     modalOpen = false; // close emoji menu
   };
+
+  onMount(() => {
+    syncButtonPressed();
+  });
 </script>
 
 <!-- Video & Chat Sidebar -->
