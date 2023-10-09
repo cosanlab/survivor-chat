@@ -526,7 +526,7 @@ export const getGroupMessages = async (groupId) => {
   const messagesCollectionRef = collection(groupDocRef, "messages");
 
   // Query the "messages" subcollection within the group document
-  const messagesQuery = query(messagesCollectionRef, orderBy('relative_timestamp', 'asc'));
+  const messagesQuery = query(messagesCollectionRef, orderBy('absolute_timestamp', 'asc'));
 
   try {
     const querySnapshot = await getDocs(messagesQuery);

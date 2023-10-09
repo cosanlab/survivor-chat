@@ -235,13 +235,7 @@
       message_string: `${avatar}: ${message.message_string}`,
     };
     console.log("messageObj", messageObj);
-    let groupMessages = await getGroupMessages($groupStore["groupId"]);
-    console.log("groupMessages", groupMessages);
     // messages = [...messages, messageObj, groupMessages];
-    messages = [...groupMessages, messageObj];
-
-    // messages = callGetGroupMessages();
-    console.log("updated messages list", messages);
 
     // messages = g;
     // console.log("updated messages list", messages);
@@ -249,6 +243,11 @@
 
     // add message to the
     await addMessage($groupStore["groupId"], messageObj);
+    let groupMessages = await getGroupMessages($groupStore["groupId"]);
+    messages = groupMessages;
+
+    // messages = callGetGroupMessages();
+    console.log("updated messages list", messages);
 
     updateScroll();
     message.message_string = "";
