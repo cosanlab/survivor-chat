@@ -17,10 +17,12 @@
     groupStore,
     addMessage,
     setUserToLogTimestamp,
+    setGroupToLogMsg,
     updateUserTimestamp,
     queryGroupTimestamps,
     netIDsByGoup,
     getGroupMessages,
+    episodeUrls,
   } from "../utils.js";
   import {
     Player,
@@ -49,11 +51,15 @@
   // };
   // console.log("hlsConfig", hlsConfig);
   // console.log("userStore", $userStore["userId"]);
-  // console.log("groupStore", $groupStore["groupId"]);
+  console.log("groupStore", $groupStore);
 
   let player;
   let paused = false;
   let time = 0;
+
+  // video-specific
+  let epToPlay = episodeUrls[$userStore["epNum"] - 1];
+  console.log("epToPlay", epToPlay);
 
   const onTimeUpdate = async (event) => {
     time = event.detail;
@@ -132,10 +138,9 @@
 
   let messages = [greeting];
   let groupMessages = callGetGroupMessages();
-  console.log("greeting messages", groupMessages);
-  console.log("messages", messages);
+  // console.log("greeting messages", groupMessages);
 
-  console.log(getGroupMessages($groupStore["groupId"]));
+  // console.log(getGroupMessages($groupStore["groupId"]));
   // let messages = callGetGroupMessages();
   // console.log("messages", messages);
 
@@ -156,12 +161,22 @@
 
   $: {
     if ($userStore["logVideoTimestamp"] == true) {
+      console.log("Experiment -- logVideoTimestamp is true");
       makeUserUpdateTimestamp();
       getHighestTimestamp();
 
       // set back to false
       makeUserLogTimestamp(false);
       // $userStore["logVideoTimestamp"] = false;
+    }
+
+    if ($groupStore["newMessage"] == true) {
+      // let groupMessages = await getGroupMessages($groupStore["groupId"]);
+      // messages = groupMessages;
+      makeUserLogNewMsg();
+      let groupMessages = callGetGroupMessages();
+      // messages = groupMessages;
+      makeGroupLogMsg(false);
     }
   }
 
@@ -191,11 +206,20 @@
 
   // call user to update timestamp
   const makeUserUpdateTimestamp = async () => {
+    console.log("making user log timeestamp", time);
     await updateUserTimestamp($userStore["userId"], time);
   };
 
   const makeUserLogTimestamp = async (booleanValue) => {
     await setUserToLogTimestamp($groupStore["users"], booleanValue);
+  };
+
+  const makeGroupLogMsg = async (booleanValue) => {
+    await setGroupToLogMsg($groupStore["groupId"], booleanValue);
+  };
+
+  const makeUserLogNewMsg = async () => {
+    await getGroupMessages($groupStore["groupId"]);
   };
 
   // Goes through each group member's user doc and returns the highest timestamp
@@ -204,10 +228,18 @@
   const getHighestTimestamp = async () => {
     let groupMembers = $groupStore["users"];
     let groupId = $userStore["groupId"];
-
-    let highestTimestamp = await queryGroupTimestamps(groupId, groupMembers);
+    let highestTimestamp;
+    try {
+      highestTimestamp = await queryGroupTimestamps(groupId, groupMembers);
+    } catch {
+      console.log("Experiment -- error in getHighestTimestamp");
+    }
     console.log("Experiment -- highestTimestamp", highestTimestamp);
-    time = highestTimestamp;
+    if (isNaN(highestTimestamp) || !highestTimestamp) {
+      return;
+    } else {
+      time = highestTimestamp;
+    }
   };
 
   // CHAT WINDOW CONTROLS
@@ -284,11 +316,12 @@
           />
         </Hls> -->
 
+        <!-- TODO: make adaptive to episdoe -->
         <Video>
           <!-- These are passed directly to the underlying HTML5 `<video>` element. -->
           <!-- Why `data-src`? Lazy loading, you can always use `src` if you prefer.  -->
           <source
-            data-src="https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/tv.11516.S28E1.1080p.H264.20200815180824.mp4"
+            data-src="https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/Survivor_S28E01_Hot_Girl_with_a_Grudge_1080p.mp4"
             type="video/mp4"
           />
         </Video>
@@ -327,7 +360,6 @@
     <div id="chatWindow">
       <ul id="messages">
         {#each messages as message}
-          <!-- {#each Object.keys(groupMessages) as index} -->
           <!-- Styling message when sent from user -->
           {#if message.author === `${avatar}`}
             <li transition:fade>{message.message_string}</li>

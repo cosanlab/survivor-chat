@@ -81,7 +81,7 @@ export const globalVars = {
 // Episode URLs
 export const episodeUrls = [
   // epNum = "1"
-  "https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/tv.11516.S28E1.1080p.H264.20200815180824.mp4",
+  "https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/Survivor_S28E01_Hot_Girl_with_a_Grudge_1080p.mp4",
   // "epNum = 2"
   "https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/tv.11516.S28E2.360p.H264.20191224003251.mp4"
 ];
@@ -281,7 +281,7 @@ export const initUser = async (groupId, netId, epNum) => {
         netId: netId,
         epNum: epNum,
         loggedIn: true,
-        currentVideoTime: 0, // initialize current video time as 0
+        videoTime: 0, // initialize current video time as 0
       });
     }
     console.log(`'New user ${userId} successfully created with document ID ${userDocRef.id}`)
@@ -368,8 +368,8 @@ export const initGroup = async (groupId, netId, epNum) => {
 
 // Log user's video timestamps to their user doc
 export const updateUserTimestamp = async (userId, newTimestamp) => {
-  // console.log("updateUserTimestamp -- userId", userId);
-  // console.log("updateUserTimestamp -- vidTimeStamp", vidTimeStamp);
+  console.log("updateUserTimestamp -- userId", userId);
+  console.log("updateUserTimestamp -- newTimestamp", newTimestamp);
 
   const userDocRef = doc(db, participantsCollectionName, userId);
 
@@ -413,7 +413,9 @@ export const updateGroupTimestamp = async (groupId, userId, vidTimeStamp) => {
 export const setUserToLogTimestamp = async (groupMembers, booleanValue) => {
   // Iterate through groupMembers array
   for (let i = 0; i < groupMembers.length; i++) {
-    // console.log("groupMembers[i]", groupMembers[i]);
+    console.log("groupMembers[i]", groupMembers[i]);
+    console.log("booleanValue", booleanValue);
+
     // Create user doc ref
     const userDocRef = doc(db, participantsCollectionName, groupMembers[i]);
 
@@ -422,6 +424,14 @@ export const setUserToLogTimestamp = async (groupMembers, booleanValue) => {
       logVideoTimestamp: booleanValue
     });
   }
+}
+
+// set group new mssage to boolean cvalue
+export const setGroupToLogMsg = async (groupId, booleanValue) => {
+  const groupDocRef = doc(db, groupsCollectionName, groupId);
+  await updateDoc(groupDocRef, {
+    newMessage: booleanValue
+  });
 }
 
 
@@ -497,6 +507,8 @@ export const addMessage = async (groupDocName, messageObj) => {
   // add absolute timestamp to messageObj
   messageObj['absolute_timestamp'] = serverTime;
 
+  
+
   // Access the group doc
   const groupDocRef = doc(db, groupsCollectionName, groupDocName);
   const groupDocSnapshot = await getDoc(groupDocRef);
@@ -509,6 +521,9 @@ export const addMessage = async (groupDocName, messageObj) => {
 
     // Update messages for group doc
     try {
+      await updateDoc(groupDocRef, {
+        newMessage: true
+      });
       // Add the message to the "messages" collection as a new document
       await addDoc(messagesCollectionRef, messageObj);
       console.log(`New message successfully added to group ${groupDocName}`);
