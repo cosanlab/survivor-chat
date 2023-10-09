@@ -28,9 +28,7 @@
 </script>
 
 {#if submitted}
-  <Loading
-    text={"Please wait for at least 2 other group members to login..."}
-  />
+  <Loading text={"Please wait for your group members to login..."} />
 {:else}
   <div class="flex flex-col items-center justify-center h-screen">
     <h1 class="mb-4 text-3xl">Please enter fullscreen mode!</h1>
