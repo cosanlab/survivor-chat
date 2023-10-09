@@ -238,7 +238,7 @@
     let groupMessages = await getGroupMessages($groupStore["groupId"]);
     console.log("groupMessages", groupMessages);
     // messages = [...messages, messageObj, groupMessages];
-    messages = groupMessages;
+    messages = [...groupMessages, messageObj];
 
     // messages = callGetGroupMessages();
     console.log("updated messages list", messages);
