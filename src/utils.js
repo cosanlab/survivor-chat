@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { initializeApp } from "firebase/app";
 import { getStorage } from "firebase/storage";
-import { getFirestore, doc, addDoc, getDoc, updateDoc, setDoc, collection, runTransaction, serverTimestamp } from "firebase/firestore";
+import { getFirestore, doc, query, orderBy, addDoc, getDoc, getDocs, updateDoc, setDoc, collection, runTransaction, serverTimestamp } from "firebase/firestore";
 import { getAuth } from 'firebase/auth';
 import { writable, get } from 'svelte/store';
 
@@ -101,19 +101,7 @@ export const netIDsByGoup = [
     "The Unreasonable Ocho": ["f004hcz", "f004ppp", "f00560z", "f003x6m",],
   }
 ];
-console.log("netIDsByGoup", netIDsByGoup);
 
-
-// Function to find an array by key
-export const findArrayByKey = (key) => {
-  for (const group of netIDsByGroup) {
-    console.log("group", group);
-    if (group[key]) {
-      return group[key];
-    }
-  }
-  return null; // Key not found
-}
 
 // All NetIDs
 export const allNetIds = [
@@ -536,6 +524,26 @@ export const addMessage = async (groupDocName, messageObj) => {
 
 
 
+export const getGroupMessages = async (groupId) => {
+  const groupDocRef = doc(db, groupsCollectionName, groupId);
+  const messagesCollectionRef = collection(groupDocRef, "messages");
+
+  // Query the "messages" subcollection within the group document
+  const messagesQuery = query(messagesCollectionRef, orderBy('relative_timestamp', 'asc'));
+
+  try {
+    const querySnapshot = await getDocs(messagesQuery);
+    const messages = querySnapshot.docs.map((doc) => doc.data());
+    
+    // Now 'messages' contains an array of message objects from the collection
+    console.log(messages);
+
+    return messages; // Optionally, return the messages to use them elsewhere
+  } catch (error) {
+    console.error('Error getting messages:', error);
+    throw error; // Rethrow the error to handle it in the calling code
+  }
+};
 
 
 

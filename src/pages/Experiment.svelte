@@ -20,7 +20,7 @@
     updateUserTimestamp,
     queryGroupTimestamps,
     netIDsByGoup,
-    findArrayByKey,
+    getGroupMessages,
   } from "../utils.js";
   import {
     Player,
@@ -57,17 +57,6 @@
 
   const onTimeUpdate = async (event) => {
     time = event.detail;
-
-    // await updateUserTimestamp($userStore["userId"], time);
-
-    // if ($groupStore["host"] == $userStore["netId"]) {
-    //   console.log("WE ARE THE HOST!");
-    //   await updateGroupTimestamp(
-    //     $groupStore["groupId"],
-    //     $userStore["userId"],
-    //     time
-    //   );
-    // }
   };
 
   // emoji menu
@@ -150,9 +139,15 @@
     dispatch("finished");
   };
 
+  let groupDocMessages;
+
+  getGroupMessages($groupStore["groupId"]);
+
+  let groupMsgs = $groupStore["messages"];
+  console.log("groupMessages", groupMsgs);
+
   $: {
     if ($userStore["logVideoTimestamp"] == true) {
-      console.log("logVideoTimestamp is TRUE");
       makeUserUpdateTimestamp();
       getHighestTimestamp();
 
@@ -160,6 +155,7 @@
       makeUserLogTimestamp(false);
       // $userStore["logVideoTimestamp"] = false;
     }
+    groupDocMessages = $groupStore["messages"];
   }
 
   // SYNC BUTTON CONTROLS
@@ -205,9 +201,6 @@
     let highestTimestamp = await queryGroupTimestamps(groupId, groupMembers);
     console.log("Experiment -- highestTimestamp", highestTimestamp);
     time = highestTimestamp;
-
-    // // Set back to false
-    // setUserToLogTimestamp($groupStore["users"], false);
   };
 
   // CHAT WINDOW CONTROLS
