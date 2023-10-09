@@ -22,7 +22,8 @@
     queryGroupTimestamps,
     netIDsByGoup,
     getGroupMessages,
-    episodeUrls,
+    // episodeUrls,
+    userId,
   } from "../utils.js";
   import {
     Player,
@@ -43,13 +44,13 @@
   const dispatch = createEventDispatcher();
 
   // video-specific
-  // const hlsConfig = {
-  //   debug: false,
-  //   enableWorker: true,
-  //   lowLatencyMode: true,
-  //   backBufferLength: 90,
-  // };
-  // console.log("hlsConfig", hlsConfig);
+  const hlsConfig = {
+    debug: false,
+    enableWorker: true,
+    lowLatencyMode: true,
+    backBufferLength: 90,
+  };
+  console.log("hlsConfig", hlsConfig);
   // console.log("userStore", $userStore["userId"]);
   console.log("groupStore", $groupStore);
 
@@ -58,8 +59,8 @@
   let time = 0;
 
   // video-specific
-  let epToPlay = episodeUrls[$userStore["epNum"] - 1];
-  console.log("epToPlay", epToPlay);
+  // let epToPlay = episodeUrls[$userStore["epNum"] - 1];
+  // console.log("epToPlay", epToPlay);
 
   const onTimeUpdate = async (event) => {
     time = event.detail;
@@ -260,9 +261,9 @@
       return;
     }
 
-    // Add userId and netId to messageObj to make things easier
     let messageObj = {
       author: `${avatar}`,
+      netId: $userStore["netId"],
       relative_timestamp: formatTime(time),
       message_string: `${avatar}: ${message.message_string}`,
     };
@@ -307,26 +308,30 @@
         on:vmCurrentTimeChange={onTimeUpdate}
         on:vmPlaybackEnded={handleEnd}
       >
-        <!-- TODO: convert .mp4 to .m3u8 files -->
         <!-- svelte-ignore a11y-media-has-caption -->
-        <!-- <Hls version="latest" config={hlsConfig}>
-          <source
-            data-src="https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/tv.11516.S28E1.1080p.H264.20200815180824.mp4"
-            type="application/x-mpegURL"
-          />
-        </Hls> -->
+        {#if $userId["epNum"] == "1"}
+          <Hls version="latest" config={hlsConfig} crossOrigin="anonymous">
+            <source
+              data-src="https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/hls/Survivor_S28E01_Hot_Girl_with_a_Grudge_1080p.m3u8"
+              type="application/x-mpegURL"
+            />
+          </Hls>
+        {:else if $userId["epNum"] == "2"}
+          <Hls version="latest" config={hlsConfig}>
+            <source
+              data-src="https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/hls/Survivor_S28E02_Cops_R_Us_720p.m3u8"
+              type="application/x-mpegURL"
+            />
+          </Hls>
+        {/if}
 
-        <!-- TODO: make adaptive to episdoe -->
-        <Video>
-          <!-- These are passed directly to the underlying HTML5 `<video>` element. -->
-          <!-- Why `data-src`? Lazy loading, you can always use `src` if you prefer.  -->
+        <!-- Regular video player -->
+        <!-- <Video>
           <source
             data-src="https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/Survivor_S28E01_Hot_Girl_with_a_Grudge_1080p.mp4"
             type="video/mp4"
           />
-        </Video>
-
-        <!-- ... -->
+        </Video> -->
 
         <DefaultUi noControls noClickToPlay noDblClickFullscreen>
           <Scrim />

@@ -9,7 +9,8 @@
 
 ## Tech Stack
 
-- Firebase (<https://firebase.google.com>) - for database & hosting
+- Firebase (<https://firebase.google.com>) - for database
+- Netlify (<https://www.netlify.com>) - for hosting
 - Svelte (<https://svelte.dev>) - for frontend framework
 - TailwindCSS (<https://tailwindcss.com>) - for styling
 - Vime (<https://vimejs.com>) - for customizable video player
