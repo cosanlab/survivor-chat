@@ -35,7 +35,7 @@
   // TODO: Add LogRocket
 
   // VARIABLES USED WITHIN App.svelte
-  let unsubscribe_user, unsubscribe_group;
+  let unsubscribe_user, unsubscribe_group, unsubscribe_meta;
   let unsubscribeUserId;
 
   // Data updating API explanation:
@@ -129,8 +129,6 @@
                 // always looking to check if they've been assigned to a group
                 const groupId = userDoc.data()?.groupId;
                 const epNum = userDoc.data()?.epNum;
-                // console.log("groupId", groupId);
-                // console.log("epNum", epNum);
                 const combinedGroupIdEpNum = `${groupId}_${epNum}`;
 
                 if (groupId != "") {
@@ -142,16 +140,18 @@
                     }
                   );
 
-                  // unsubscribeUserId = userId.subscribe((value) => {
-                  //   // This callback will be called whenever the userId store value changes
-                  //   console.log(
-                  //     `User ${value} subbed to group ${combinedGroupIdEpNum} data`
-                  //   );
-                  // });
+                  // Also subscribe to their meta doc
+                  // unsubscribe_meta = onSnapshot(
+                  //   doc(db, "survivor-meta", groupId),
+                  //   (metaDoc) => {
+                  //     metaDoc.set(metaDoc.data());
+                  //   }
+                  // );
                 }
               } else {
                 console.log("userDoc does not exist");
               }
+
               // unsubscribeUserId = userId.subscribe((value) => {
               //   // This callback will be called whenever the userId store value changes
               //   console.log(`User ${value} subbed to user data`);

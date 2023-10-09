@@ -86,6 +86,35 @@ export const episodeUrls = [
   "https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/tv.11516.S28E2.360p.H264.20191224003251.mp4"
 ];
 
+// // NetIDs by Group
+export const netIDsByGoup = [
+  {
+    "BBB": ["f0055n5", "f006c2v", "f00563r", "f0055n3"],
+    "DEV": ["f004p57", "dev_test_1", "dev_test_2", "dev_test_3"],
+    "DVBrainiac": ["f004gvv", "f0055kp", "f0069ys", "f005cj7",],
+    "EFD": ["f005g15", "f005g97", "f0055k8", "f005cn2",],
+    "Freud's Favorites": ["f0055q9", "f005cyh", "f005d1c", "f005crp",],
+    "Pavlov's Dawgs": ["f004r11", "f005cn4", "f004rhy", "f004msc",],
+    "Psychiatric Trio": ["f003xfx", "f004r80", "f004hd0", "f004r1m",],
+    "Team Luke": ["f005cpx", "f003pt8", "f004p6r", "f004ggx",],
+    "The Psychedelics": ["f006h88", "f006bp5", "f006hr8", "f006b47",],
+    "The Unreasonable Ocho": ["f004hcz", "f004ppp", "f00560z", "f003x6m",],
+  }
+];
+console.log("netIDsByGoup", netIDsByGoup);
+
+
+// Function to find an array by key
+export const findArrayByKey = (key) => {
+  for (const group of netIDsByGroup) {
+    console.log("group", group);
+    if (group[key]) {
+      return group[key];
+    }
+  }
+  return null; // Key not found
+}
+
 // All NetIDs
 export const allNetIds = [
   // BBB

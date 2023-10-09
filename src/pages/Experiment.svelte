@@ -19,6 +19,8 @@
     setUserToLogTimestamp,
     updateUserTimestamp,
     queryGroupTimestamps,
+    netIDsByGoup,
+    findArrayByKey,
   } from "../utils.js";
   import {
     Player,
@@ -104,11 +106,18 @@
     message.message_string += e.target.textContent;
   };
 
-  // TODO: read in avatar from meta doc depending on index of netid
+  // read in avatar from utils depending on index of netid
+  const getAvatar = (groupId, netId) => {
+    let netIdsInGroup = netIDsByGoup[0][groupId];
+    let idx = netIdsInGroup.indexOf(netId);
+    return avatarIdx[idx];
+  };
+
   // Chat
   let avatarIdx = [128028, 128049, 128055, 128013]; // [ant, cat, pig, snake]
-  const avatar = String.fromCodePoint(avatarIdx[0]);
-  let avatarNames = ["ant", "cat", "pig", "snake"];
+  const avatar = String.fromCodePoint(
+    getAvatar($userStore["groupId"], $userStore["netId"])
+  );
   let avatarEmojis = avatarIdx.map((idx) => String.fromCodePoint(idx));
 
   const placeholder_full = {
