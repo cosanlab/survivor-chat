@@ -110,6 +110,7 @@
   };
 
   // Chat
+  // TODO: change avatars to first names from survivor-meta doc
   let avatarIdx = [128028, 128049, 128055, 128013]; // [ant, cat, pig, snake]
   const avatar = String.fromCodePoint(
     getAvatar($userStore["groupId"], $userStore["netId"])
@@ -132,13 +133,12 @@
   const callGetGroupMessages = async () => {
     let groupId = $groupStore["groupId"];
     let groupMessages = await getGroupMessages(groupId);
+    messages = groupMessages;
     console.log("groupMessages", groupMessages);
-
     return groupMessages;
   };
 
   let messages = [greeting];
-  let groupMessages = callGetGroupMessages();
   // console.log("greeting messages", groupMessages);
 
   // console.log(getGroupMessages($groupStore["groupId"]));
@@ -160,6 +160,7 @@
     dispatch("finished");
   };
 
+  let groupMessages;
   $: {
     if ($userStore["logVideoTimestamp"] == true) {
       console.log("Experiment -- logVideoTimestamp is true");
@@ -175,8 +176,7 @@
       // let groupMessages = await getGroupMessages($groupStore["groupId"]);
       // messages = groupMessages;
       makeUserLogNewMsg();
-      let groupMessages = callGetGroupMessages();
-      // messages = groupMessages;
+      callGetGroupMessages();
       makeGroupLogMsg(false);
     }
   }
@@ -268,7 +268,6 @@
       message_string: `${avatar}: ${message.message_string}`,
     };
     console.log("messageObj", messageObj);
-    // messages = [...messages, messageObj, groupMessages];
 
     // messages = g;
     // console.log("updated messages list", messages);
@@ -276,10 +275,9 @@
 
     // add message to the
     await addMessage($groupStore["groupId"], messageObj);
-    let groupMessages = await getGroupMessages($groupStore["groupId"]);
-    messages = groupMessages;
+    // let groupMessages = await getGroupMessages($groupStore["groupId"]);
 
-    // messages = callGetGroupMessages();
+    callGetGroupMessages();
     console.log("updated messages list", messages);
 
     updateScroll();
@@ -289,7 +287,7 @@
 
   onMount(() => {
     syncButtonPressed();
-    groupMessages = callGetGroupMessages();
+    callGetGroupMessages();
   });
 </script>
 

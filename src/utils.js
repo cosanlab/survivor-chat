@@ -103,6 +103,7 @@ export const netIDsByGoup = [
 ];
 
 
+// Options for the dropdown menu in Login.svelte
 // All NetIDs
 export const allNetIds = [
   // BBB
@@ -111,10 +112,10 @@ export const allNetIds = [
   "f00563r",
   "f0055n3",
   // DEV
-  "f004p57", // Wasita]
   "dev_test_1",
   "dev_test_2",
   "dev_test_3",
+  "dev_test_4",
   // DVBrainiac
   "f004gvv",
   "f0055kp",
