@@ -152,6 +152,7 @@
 
     if ($groupMessagesStore) {
       messages = $groupMessagesStore;
+      updateScroll();
       console.log("Experiment -- messages", messages);
     }
   }
@@ -245,6 +246,8 @@
   };
 
   onMount(() => {
+    // TODO: add a way for 4th user to add their userId to the users field in group doc
+    // so that they can call group sync function
     // if ($groupMessagesStore) {
     //   messages = $groupMessagesStore;
     //   console.log("onMount -- messages", messages);
@@ -254,7 +257,6 @@
 </script>
 
 <!-- Video & Chat Sidebar -->
-
 <div class="flex">
   <!-- Video -->
   <div class="basis-1/2">
@@ -269,14 +271,14 @@
         on:vmPlaybackEnded={handleEnd}
       >
         <!-- svelte-ignore a11y-media-has-caption -->
-        {#if $userId["epNum"] == "1"}
+        {#if $userStore["epNum"] == "1"}
           <Hls version="latest" config={hlsConfig} crossOrigin="anonymous">
             <source
               data-src="https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/hls/Survivor_S28E01_Hot_Girl_with_a_Grudge_1080p.m3u8"
               type="application/x-mpegURL"
             />
           </Hls>
-        {:else if $userId["epNum"] == "2"}
+        {:else if $userStore["epNum"] == "2"}
           <Hls version="latest" config={hlsConfig}>
             <source
               data-src="https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/hls/Survivor_S28E02_Cops_R_Us_720p.m3u8"

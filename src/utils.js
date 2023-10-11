@@ -92,7 +92,7 @@ export const episodeUrls = [
 export const netIDsByGoup = [
   {
     "BBB": ["f0055n5", "f006c2v", "f00563r", "f0055n3"],
-    "DEV": ["f004p57", "dev_test_1", "dev_test_2", "dev_test_3"],
+    "DEV": ["dev_test_1", "dev_test_2", "dev_test_3", "dev_test_4"],
     "DVBrainiac": ["f004gvv", "f0055kp", "f0069ys", "f005cj7",],
     "EFD": ["f005g15", "f005g97", "f0055k8", "f005cn2",],
     "Freud's Favorites": ["f0055q9", "f005cyh", "f005d1c", "f005crp",],
@@ -506,9 +506,7 @@ export const addMessage = async (groupDocName, messageObj) => {
   // serverTimestamp() is not currently supported inside arrays
   // add absolute timestamp to messageObj
   messageObj['absolute_timestamp'] = serverTime;
-
   
-
   // Access the group doc
   const groupDocRef = doc(db, groupsCollectionName, groupDocName);
   const groupDocSnapshot = await getDoc(groupDocRef);
