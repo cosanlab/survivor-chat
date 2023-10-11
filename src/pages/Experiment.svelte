@@ -15,14 +15,12 @@
     formatTime,
     userStore,
     groupStore,
+    groupMessagesStore,
     addMessage,
     setUserToLogTimestamp,
-    setGroupToLogMsg,
     updateUserTimestamp,
     queryGroupTimestamps,
     netIDsByGoup,
-    getGroupMessages,
-    // episodeUrls,
     userId,
   } from "../utils.js";
   import {
@@ -51,16 +49,15 @@
     backBufferLength: 90,
   };
   console.log("hlsConfig", hlsConfig);
-  // console.log("userStore", $userStore["userId"]);
   console.log("groupStore", $groupStore);
+  console.log("Eperiment -- groupMessagesStore", $groupMessagesStore);
+  // let messages = $groupMessagesStore;
+  let messages = [];
+  // console.log("Eperiment -- messages", messages);
 
   let player;
   let paused = false;
   let time = 0;
-
-  // video-specific
-  // let epToPlay = episodeUrls[$userStore["epNum"] - 1];
-  // console.log("epToPlay", epToPlay);
 
   const onTimeUpdate = async (event) => {
     time = event.detail;
@@ -124,26 +121,8 @@
   };
   const placeholder = placeholder_full.message_string;
 
-  const greeting = {
-    author: "Server",
-    absolute_timestamp: serverTime,
-    message_string: `Server: You have joined the chat as ${avatar}`,
-  };
-
-  const callGetGroupMessages = async () => {
-    let groupId = $groupStore["groupId"];
-    let groupMessages = await getGroupMessages(groupId);
-    messages = groupMessages;
-    console.log("groupMessages", groupMessages);
-    return groupMessages;
-  };
-
-  let messages = [greeting];
-  // console.log("greeting messages", groupMessages);
-
   // console.log(getGroupMessages($groupStore["groupId"]));
   // let messages = callGetGroupMessages();
-  // console.log("messages", messages);
 
   // let messages = [];
   let message = {
@@ -160,7 +139,6 @@
     dispatch("finished");
   };
 
-  let groupMessages;
   $: {
     if ($userStore["logVideoTimestamp"] == true) {
       console.log("Experiment -- logVideoTimestamp is true");
@@ -172,12 +150,9 @@
       // $userStore["logVideoTimestamp"] = false;
     }
 
-    if ($groupStore["newMessage"] == true) {
-      // let groupMessages = await getGroupMessages($groupStore["groupId"]);
-      // messages = groupMessages;
-      makeUserLogNewMsg();
-      callGetGroupMessages();
-      makeGroupLogMsg(false);
+    if ($groupMessagesStore) {
+      messages = $groupMessagesStore;
+      console.log("Experiment -- messages", messages);
     }
   }
 
@@ -213,14 +188,6 @@
 
   const makeUserLogTimestamp = async (booleanValue) => {
     await setUserToLogTimestamp($groupStore["users"], booleanValue);
-  };
-
-  const makeGroupLogMsg = async (booleanValue) => {
-    await setGroupToLogMsg($groupStore["groupId"], booleanValue);
-  };
-
-  const makeUserLogNewMsg = async () => {
-    await getGroupMessages($groupStore["groupId"]);
   };
 
   // Goes through each group member's user doc and returns the highest timestamp
@@ -269,16 +236,8 @@
     };
     console.log("messageObj", messageObj);
 
-    // messages = g;
-    // console.log("updated messages list", messages);
-    // console.log("get group msgs", getGroupMessages($groupStore["groupId"]));
-
     // add message to the
     await addMessage($groupStore["groupId"], messageObj);
-    // let groupMessages = await getGroupMessages($groupStore["groupId"]);
-
-    callGetGroupMessages();
-    console.log("updated messages list", messages);
 
     updateScroll();
     message.message_string = "";
@@ -286,8 +245,11 @@
   };
 
   onMount(() => {
+    // if ($groupMessagesStore) {
+    //   messages = $groupMessagesStore;
+    //   console.log("onMount -- messages", messages);
+    // }
     syncButtonPressed();
-    callGetGroupMessages();
   });
 </script>
 
@@ -362,32 +324,35 @@
     <!-- Chat window -->
     <div id="chatWindow">
       <ul id="messages">
-        {#each messages as message}
-          <!-- Styling message when sent from user -->
-          {#if message.author === `${avatar}`}
-            <li transition:fade>{message.message_string}</li>
-            <div id="timestamp">
-              {message.relative_timestamp}
-            </div>
-            <!-- Server message styling -->
-          {:else if message.author === "Server"}
-            <li class="server" transition:fade>
-              {message.message_string}
-            </li>
-            <!-- Messages from others styling -->
-          {:else}
-            <li class="other" transition:fade>
-              {message.message_string}
-            </li>
-            <div id="timestamp-other">
-              {message.relative_timestamp}
-            </div>
-          {/if}
-        {/each}
+        {#if Object.keys(messages).length > 0}
+          {#each messages as message}
+            <!-- Styling message when sent from user -->
+            {#if message.author === `${avatar}`}
+              <li transition:fade>{message.message_string}</li>
+              <div id="timestamp">
+                {message.relative_timestamp}
+              </div>
+              <!-- Server message styling -->
+            {:else if message.author === "Server"}
+              <li class="server" transition:fade>
+                {message.message_string}
+              </li>
+              <!-- Messages from others styling -->
+            {:else}
+              <li class="other" transition:fade>
+                {message.message_string}
+              </li>
+              <div id="timestamp-other">
+                {message.relative_timestamp}
+              </div>
+            {/if}
+          {/each}
+        {/if}
       </ul>
     </div>
     <form action="">
       <div id="btn-emoji-icon-cont">
+        <!-- svelte-ignore a11y-no-noninteractive-tabindex -->
         <div
           id="emoji-opener-icon"
           on:click={() => (modalOpen = !modalOpen)}
@@ -425,14 +390,17 @@
         <div id="emoji-cont" transition:fly={{ y: -30 }}>
           <header>
             {#each setIcons as icon, i}
+              <!-- svelte-ignore a11y-click-events-have-key-events -->
               <div data-id={i} on:click={chooseEmojiSet}>
                 {String.fromCodePoint(icon)}
               </div>
             {/each}
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
             <div id="closer-icon" on:click={() => (modalOpen = false)}>X</div>
           </header>
 
           {#each emojis as emoji}
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
             <span on:click={addEmoji}>{emoji}</span>
           {/each}
         </div>

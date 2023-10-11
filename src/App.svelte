@@ -1,12 +1,20 @@
 <script>
   import { onAuthStateChanged } from "firebase/auth";
-  import { doc, onSnapshot } from "firebase/firestore";
+  import {
+    doc,
+    onSnapshot,
+    collection,
+    query,
+    orderBy,
+    getDocs,
+  } from "firebase/firestore";
   import { onMount } from "svelte";
   import {
     auth,
     db,
     userStore,
     groupStore,
+    groupMessagesStore,
     loggedIn,
     userId,
     resetGroupData,
@@ -35,7 +43,7 @@
   // TODO: Add LogRocket
 
   // VARIABLES USED WITHIN App.svelte
-  let unsubscribe_user, unsubscribe_group, unsubscribe_meta;
+  let unsubscribe_user, unsubscribe_group, unsubscribe_group_msgs;
   let unsubscribeUserId;
 
   // Data updating API explanation:
@@ -107,6 +115,10 @@
           unsubscribe_group();
           unsubscribe_group = null;
         }
+        if (unsubscribe_group_msgs) {
+          unsubscribe_group_msgs();
+          unsubscribe_group_msgs = null;
+        }
       } else {
         // Set the userId store to the value on their local computer because if they're
         // logging in for the first time, then Login.svelte would have already done
@@ -139,23 +151,42 @@
                       groupStore.set(groupDoc.data());
                     }
                   );
-
-                  // Also subscribe to their meta doc
-                  // unsubscribe_meta = onSnapshot(
-                  //   doc(db, "survivor-meta", groupId),
-                  //   (metaDoc) => {
-                  //     metaDoc.set(metaDoc.data());
-                  //   }
-                  // );
+                  console.log(
+                    "App.svelte -- combinedGroupIdEpNum",
+                    combinedGroupIdEpNum
+                  );
+                  let groupDocRef = doc(
+                    db,
+                    "survivor-groups",
+                    combinedGroupIdEpNum
+                  );
+                  let messagesCollectionRef = collection(
+                    groupDocRef,
+                    "messages"
+                  );
+                  // subscribe to group messages collection
+                  let messagesQuery = query(
+                    messagesCollectionRef,
+                    orderBy("absolute_timestamp", "asc")
+                  );
+                  unsubscribe_group_msgs = onSnapshot(
+                    messagesQuery,
+                    (querySnapshot) => {
+                      const groupMessages = querySnapshot.docs.map(
+                        (groupMessagesDoc) => groupMessagesDoc.data()
+                      );
+                      groupMessagesStore.set(groupMessages);
+                      console.log("App.svelte -- groupMessages", groupMessages);
+                      console.log(
+                        "App.svelte -- groupMessagesStore",
+                        $groupMessagesStore
+                      );
+                    }
+                  );
                 }
               } else {
                 console.log("userDoc does not exist");
               }
-
-              // unsubscribeUserId = userId.subscribe((value) => {
-              //   // This callback will be called whenever the userId store value changes
-              //   console.log(`User ${value} subbed to user data`);
-              // });
             }
           );
         } catch (error) {
@@ -174,6 +205,8 @@
     "App.svelte -- groupStore['currentState']",
     $groupStore["currentState"]
   );
+
+  console.log("App.svelte -- groupMessagesStore", $groupMessagesStore);
 </script>
 
 <!-- This is our main markup. It uses the currentState field of the userStore to

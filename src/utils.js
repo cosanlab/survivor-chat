@@ -50,6 +50,8 @@ export const metaCollectionName = 'survivor-meta';
 export const userStore = writable({});
 // Another store for the group data
 export const groupStore = writable({});
+// Store for group messages
+export const groupMessagesStore = writable({});
 // Store for meta collection data that entails which netIds are in which groups
 export const metaStore = writable({});
 // Another store that keeps track of whether a user is logged in or not
@@ -414,9 +416,6 @@ export const updateGroupTimestamp = async (groupId, userId, vidTimeStamp) => {
 export const setUserToLogTimestamp = async (groupMembers, booleanValue) => {
   // Iterate through groupMembers array
   for (let i = 0; i < groupMembers.length; i++) {
-    console.log("groupMembers[i]", groupMembers[i]);
-    console.log("booleanValue", booleanValue);
-
     // Create user doc ref
     const userDocRef = doc(db, participantsCollectionName, groupMembers[i]);
 
