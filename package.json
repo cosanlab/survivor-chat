@@ -18,6 +18,7 @@
   "dependencies": {
     "@vime/core": "^5.3.3",
     "@vime/svelte": "^5.3.3",
-    "firebase": "^9.6.4"
+    "firebase": "^9.6.4",
+    "logrocket": "^6.0.0"
   }
 }
