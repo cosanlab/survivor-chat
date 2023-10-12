@@ -341,7 +341,6 @@
             />
           </Hls>
         {/if}
-
         <DefaultUi noControls noClickToPlay noDblClickFullscreen>
           <Scrim />
           <Controls fullWidth pin="topLeft">
