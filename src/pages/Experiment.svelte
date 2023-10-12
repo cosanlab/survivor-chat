@@ -166,10 +166,9 @@
   // then sets the user's logVideoTimestamp to false
   const getHighestTimestamp = async () => {
     let groupMembers = $groupStore["users"];
-    let groupId = $userStore["groupId"];
     let highestTimestamp;
     try {
-      highestTimestamp = await queryGroupTimestamps(groupId, groupMembers);
+      highestTimestamp = await queryGroupTimestamps(groupMembers);
     } catch {
       console.log("Experiment -- error in getHighestTimestamp");
     }

@@ -60,8 +60,6 @@ export const loggedIn = writable(false);
 export const userId = writable(null);
 // NetID
 export const netId = writable(null);
-// Episode Number
-export const epNum = writable(null);
 // Store to control the UI for what state the experiment is in
 export const stateDisplay = writable([]);
 // Store server time
@@ -183,62 +181,9 @@ export const checkNetId = async (groupId, netId, epNum) => {
     await initGroup(combinedGroupIdEpNum, netId, epNum);
   } else {
     let netIdError = `netId ${netId} not a member of ${groupId}`;
-    console.log("utils -- netIdError", netIdError);
     throw new Error(netIdError);
   }
 };
-
-
-export const getGroupIdFromEmail = (email) => {
-  // Split the email by underscore ('_')
-  const parts = email.split('_');
-  
-  // Check if there is at least one underscore in the email
-  if (parts.length > 1) {
-    // Return the first part (text before the first underscore)
-    return parts[0];
-  } else {
-    // If there are no underscores, return the original email
-    return email;
-  }
-}
-
-export const getNetIdFromEmail = (email) => {
-  // Split the email by underscore ('_')
-  const parts = email.split('_');
-  
-  // Check if there is at least one underscore in the email
-  if (parts.length > 1) {
-    // Return the first part (text before the first underscore)
-    return parts[1];
-  } else {
-    // If there are no underscores, return the original email
-    return email;
-  }
-}
-
-export const getEpNumFromEmail = (email) => {
-  // Split the email by '@' to separate the username and domain
-  const parts = email.split('@');
-  
-  // Check if there is at least one '@' in the email
-  if (parts.length === 2) {
-    // Get the first part (username) and split it by '_' to separate the parts
-    const usernameParts = parts[0].split('_');
-    
-    // Check if there is at least one underscore in the username
-    if (usernameParts.length > 1) {
-      // Get the last part (text after the last underscore)
-      const textAfterLastUnderscore = usernameParts[usernameParts.length - 1];
-      
-      // Return the text after the last underscore and before '@'
-      return textAfterLastUnderscore;
-    }
-  }
-  
-  // If there are no underscores or '@' symbol, return an empty string
-  return '';
-}
 
 // convert time from seconds to mm:ss format
 export const formatTime = (seconds) => {
@@ -349,7 +294,7 @@ export const initGroup = async (groupId, netId, epNum) => {
     console.log(`Group ${groupId} document does not exist! Creating now...`);
     try {
       await setDoc(groupDocEpRef, {
-        counter: [netId], // initialize counter as empty array - will be updated by reqStateChange()
+        counter: [netId], // initialize counter as array - will be updated by reqStateChange()
         users: [], // initialize users as empty array - will be updated by reqStateChange()
         groupId: groupId,
         epNum: epNum,
@@ -388,16 +333,6 @@ export const updateUserTimestamp = async (userId, newTimestamp) => {
   
 }
 
-// Log host user's video timestamp to the group doc
-export const updateGroupTimestamp = async (groupId, userId, vidTimeStamp) => {
-  const groupDocRef = doc(db, groupsCollectionName, groupId);
-
-  // Write host user's video timestamp to group doc
-  await updateDoc(groupDocRef, {
-    videoTime: vidTimeStamp
-  });
-}
-
 // Set each user's logVideoTimestamp to true
 export const setUserToLogTimestamp = async (groupMembers, logTimestampFlag) => {
   // Iterate through groupMembers array
@@ -421,12 +356,11 @@ export const setGroupToLogMsg = async (groupId, booleanValue) => {
 }
 
 
-
 // Query everyone in group's video timestamps
 // then return the highest number
 // to then set the video time to that number
 // in Experiment.svelte
-export const queryGroupTimestamps = async (groupId, groupMembers) => {
+export const queryGroupTimestamps = async (groupMembers) => {
   // Iterate through groupMembers array
   // and query each user's video timestamp
   // by reading their user doc
