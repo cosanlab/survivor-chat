@@ -50,6 +50,8 @@ export const metaCollectionName = 'survivor-meta';
 export const userStore = writable({});
 // Another store for the group data
 export const groupStore = writable({});
+// Store for group messages
+export const groupMessagesStore = writable({});
 // Store for meta collection data that entails which netIds are in which groups
 export const metaStore = writable({});
 // Another store that keeps track of whether a user is logged in or not
@@ -78,31 +80,9 @@ export const globalVars = {
 // GLOBAL EXPERIMENT FUNCTIONS
 //############################
 
-// Episode URLs
-export const episodeUrls = [
-  // epNum = "1"
-  "https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/Survivor_S28E01_Hot_Girl_with_a_Grudge_1080p.mp4",
-  // "epNum = 2"
-  "https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/tv.11516.S28E2.360p.H264.20191224003251.mp4"
-];
-
-// // NetIDs by Group
-export const netIDsByGoup = [
-  {
-    "BBB": ["f0055n5", "f006c2v", "f00563r", "f0055n3"],
-    "DEV": ["f004p57", "dev_test_1", "dev_test_2", "dev_test_3"],
-    "DVBrainiac": ["f004gvv", "f0055kp", "f0069ys", "f005cj7",],
-    "EFD": ["f005g15", "f005g97", "f0055k8", "f005cn2",],
-    "Freud's Favorites": ["f0055q9", "f005cyh", "f005d1c", "f005crp",],
-    "Pavlov's Dawgs": ["f004r11", "f005cn4", "f004rhy", "f004msc",],
-    "Psychiatric Trio": ["f003xfx", "f004r80", "f004hd0", "f004r1m",],
-    "Team Luke": ["f005cpx", "f003pt8", "f004p6r", "f004ggx",],
-    "The Psychedelics": ["f006h88", "f006bp5", "f006hr8", "f006b47",],
-    "The Unreasonable Ocho": ["f004hcz", "f004ppp", "f00560z", "f003x6m",],
-  }
-];
-
-
+// FUTURE TODO: Read this from meta collection
+// but for now, too lazy so we hard-code it
+// Options for the dropdown menu in Login.svelte
 // All NetIDs
 export const allNetIds = [
   // BBB
@@ -111,10 +91,10 @@ export const allNetIds = [
   "f00563r",
   "f0055n3",
   // DEV
-  "f004p57", // Wasita]
   "dev_test_1",
   "dev_test_2",
   "dev_test_3",
+  "dev_test_4",
   // DVBrainiac
   "f004gvv",
   "f0055kp",
@@ -157,9 +137,36 @@ export const allNetIds = [
   "f003x6m"
 ].sort();
 
+// Find corresponding first name for given netId
+export const getUserNameInMeta = async (groupId, netId, userId) => {
+  const metaDocRef = doc(db, metaCollectionName, `${groupId}`);
+  const metaDocSnapshot = await getDoc(metaDocRef);
+  const metaDocData = metaDocSnapshot.data(); // get doc data as an object
+  const membersMap = metaDocData.members; // get members map
+  console.log("getUserNameInMeta -- membersMap", membersMap);
+
+  // Find index of netId in members map
+  let netIdIdx = -1; // Initialize with -1 to indicate not found
+
+  // Iterate through the membersMap
+  for (const key in membersMap) {
+    if (membersMap[key] === netId) {
+      netIdIdx = key; // Set netIdIdx to the key (assuming keys are numeric indices)
+      break; // Exit the loop once a match is found
+    }
+  }
+  const firstNames = metaDocData.members_names;
+  const firstName = firstNames[netIdIdx];
+
+  // Now write first name to user doc
+  const userDocRef = doc(db, participantsCollectionName, userId);
+  await updateDoc(userDocRef, {
+    username: firstName
+  });
+};
+
 // Check netId exists within chosen groupId
 export const checkNetId = async (groupId, netId, epNum) => {
-  // netId = netId.toLowerCase();
   const docRef = doc(db, metaCollectionName, `${groupId}`);
   const docSnap = await getDoc(docRef);
   const docData = docSnap.data(); // get doc data as an object
@@ -167,7 +174,6 @@ export const checkNetId = async (groupId, netId, epNum) => {
   
   // Create a computed property to combine epNum and groupId
   let combinedGroupIdEpNum = `${groupId}_${epNum}`;
-
   let membersMapValues = Object.values(membersMap);
 
   // check if netId exists in members map
@@ -248,14 +254,8 @@ export const initUser = async (groupId, netId, epNum) => {
   try {
     // specify userId to include the specific group they are in and the episode number they're watching
     const userId = `${groupId}_${epNum}_${netId}`;
-    console.log("initUser -- userId", userId);
     let email = `${groupId}_${epNum}_${netId}@experiment.com`;
-    console.log("initUser -- groupId", groupId);
-    console.log("initUser -- netId", netId);
-    console.log("initUser -- epNum", epNum);
-    console.log("initUser -- email", email);
     let combinedGroupIdEpNum = `${groupId}_${epNum}`;
-    console.log("initUser -- combinedGroupIdEpNum", combinedGroupIdEpNum);
 
     // We could have just tried to read the value of the $userId store here, but the $
     // syntax only works in .svelte files. There's a special get() function we have to
@@ -290,7 +290,7 @@ export const initUser = async (groupId, netId, epNum) => {
   }
 };
 
-// TODO: function to set loggedIn to false in user doc
+// Function to set loggedIn to false in user doc
 export const logoutUser = async (groupId, netId, epNum) => {
   try {
     // Convert user-input netId to lowercase
@@ -351,13 +351,10 @@ export const initGroup = async (groupId, netId, epNum) => {
       await setDoc(groupDocEpRef, {
         counter: [netId], // initialize counter as empty array - will be updated by reqStateChange()
         users: [], // initialize users as empty array - will be updated by reqStateChange()
-        host: netId, // initialize host as first user to join
         groupId: groupId,
         epNum: epNum,
         logVideoTimestamp: false,
         currentState: 'request-full-screen', // start group at instructions screen
-        videoTime: 0, // initialize video time as 0,
-        currentVideoTimes: [], // initialize current video time as 0,
       });
       console.log(`New group ${groupId} successfully created with document ID: ${groupDocEpRef.id}`);
     } catch (error) {
@@ -368,9 +365,6 @@ export const initGroup = async (groupId, netId, epNum) => {
 
 // Log user's video timestamps to their user doc
 export const updateUserTimestamp = async (userId, newTimestamp) => {
-  console.log("updateUserTimestamp -- userId", userId);
-  console.log("updateUserTimestamp -- newTimestamp", newTimestamp);
-
   const userDocRef = doc(db, participantsCollectionName, userId);
 
   await runTransaction(db, async (transaction) => {
@@ -383,7 +377,6 @@ export const updateUserTimestamp = async (userId, newTimestamp) => {
       const { videoTime } = document.data();
     
       if (newTimestamp > videoTime) {
-
       // Write user's video timestamp to group doc
       await updateDoc(userDocRef, {
         videoTime: newTimestamp
@@ -397,10 +390,6 @@ export const updateUserTimestamp = async (userId, newTimestamp) => {
 
 // Log host user's video timestamp to the group doc
 export const updateGroupTimestamp = async (groupId, userId, vidTimeStamp) => {
-  // console.log("updateGroupTimestamp -- groupId", groupId);
-  // console.log("updateGroupTimestamp -- userId", userId);
-  // console.log("updateGroupTimestamp -- vidTimeStamp", vidTimeStamp);
-
   const groupDocRef = doc(db, groupsCollectionName, groupId);
 
   // Write host user's video timestamp to group doc
@@ -410,18 +399,15 @@ export const updateGroupTimestamp = async (groupId, userId, vidTimeStamp) => {
 }
 
 // Set each user's logVideoTimestamp to true
-export const setUserToLogTimestamp = async (groupMembers, booleanValue) => {
+export const setUserToLogTimestamp = async (groupMembers, logTimestampFlag) => {
   // Iterate through groupMembers array
   for (let i = 0; i < groupMembers.length; i++) {
-    console.log("groupMembers[i]", groupMembers[i]);
-    console.log("booleanValue", booleanValue);
-
     // Create user doc ref
     const userDocRef = doc(db, participantsCollectionName, groupMembers[i]);
 
     // Write host user's video timestamp to group doc
     await updateDoc(userDocRef, {
-      logVideoTimestamp: booleanValue
+      logVideoTimestamp: logTimestampFlag
     });
   }
 }
@@ -441,9 +427,6 @@ export const setGroupToLogMsg = async (groupId, booleanValue) => {
 // to then set the video time to that number
 // in Experiment.svelte
 export const queryGroupTimestamps = async (groupId, groupMembers) => {
-  console.log("queryGroupTimestamps -- groupId", groupId);
-  console.log("queryGroupTimestamps -- groupMembers", groupMembers);
-
   // Iterate through groupMembers array
   // and query each user's video timestamp
   // by reading their user doc
@@ -499,16 +482,11 @@ export const resetGroupData = async () => {
 
 // Function to add a new message to the group doc
 export const addMessage = async (groupDocName, messageObj) => {
-  console.log("addMessage -- groupDocName", groupDocName);
-  console.log("addMessage -- messageObj", messageObj);
-
-  // have to do this here bc serverTimestamp() 
+  // Have to do this here bc serverTimestamp() 
   // serverTimestamp() is not currently supported inside arrays
   // add absolute timestamp to messageObj
   messageObj['absolute_timestamp'] = serverTime;
-
   
-
   // Access the group doc
   const groupDocRef = doc(db, groupsCollectionName, groupDocName);
   const groupDocSnapshot = await getDoc(groupDocRef);
@@ -563,41 +541,6 @@ export const getGroupMessages = async (groupId) => {
 };
 
 
-
-
-
-// Format the values the user inputted so that we encode each id as 000, 001...NNN, so
-// we can use them as unique document ideas up to 1000 subs.
-export const formatUserId = (groupId, subId, role) => {
-  let groupId_f, subId_f, userId_f, role_f;
-  let g = parseInt(groupId);
-  let s = parseInt(subId);
-  if (g < 10) {
-    groupId_f = `00${g}`;
-  } else if (g >= 10 && g < 100) {
-    groupId_f = `0${g}`;
-  } else {
-    groupId_f = groupId;
-  }
-  if (s < 10) {
-    subId_f = `00${s}`;
-  } else if (s >= 10 && s < 100) {
-    subId_f = `0${s}`;
-  } else {
-    subId_f = subId;
-  }
-
-  userId_f = `${groupId_f}_${subId_f}_${role}`;
-  role_f = role;
-
-  return {
-    groupId_f,
-    subId_f,
-    role_f,
-    userId_f
-  };
-};
-
 export const getRandomInt = (val) => {
   let min = Math.ceil(1);
   let max = Math.floor(val);
@@ -616,13 +559,6 @@ export const round2 = (val) => {
 
 export const roundHalf = (val) => {
   return Math.round(val * 2) / 2;
-};
-// Calculates propSpent on choice made, executed reactively by EndowmentScale.svelte
-export const calcPropSpent = (ratingString, endowment) => {
-  const proportionOfEndowmentSpent = parseFloat(ratingString) / endowment;
-  return {
-    proportionOfEndowmentSpent
-  };
 };
 
 //#####################################
@@ -769,37 +705,32 @@ export const reqUserStateChange = async (newState) => {
   }
 };
 
+// Add client to group doc users field
+export const addClientToGroup = async (groupDocName, userId) => {
+  const groupDocEpRef = doc(db, groupsCollectionName, groupDocName);
 
-export const saveDebrief = async (data) => {
-  const { groupId } = get(groupStore);
-  const { role } = get(userStore);
-  const docRef = doc(db, 'groups', groupId);
   try {
     await runTransaction(db, async (transaction) => {
-      const document = await transaction.get(docRef);
+
+      // Get the latest data, rather than relying on the store
+      const document = await transaction.get(groupDocEpRef);
       if (!document.exists()) {
         throw "Document does not exist!";
       }
-      const updateData = { 'debrief': {} };
-      if (role === 'decider1') {
-        updateData['debrief']['D1'] = data;
-      } else if (role === 'decider2') {
-        updateData['debrief']['D2'] = data;
-      } else if (role === 'receiver') {
-        updateData['debrief']['R'] = data;
+      // Freshest data
+      const { users } = document.data();
+
+      // Add the client's userId to the users field if they're not already in it
+      if (!users.includes(userId)) {
+        await transaction.update(groupDocEpRef, { users: [...users, userId] });
       } else {
-        throw `${role} is an unknown role`;
+        console.log("Ignoring duplicate request");
       }
-      await transaction.update(docRef, updateData);
-      console.log("Successfully saved debrief data");
     });
-
   } catch (error) {
-    console.error(`Error saving debrief data`, error);
+    console.error(`Error adding userId ${userId} for group: ${groupDocName}`, error);
   }
-
-}
-
+};
 
 
 

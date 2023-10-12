@@ -137,6 +137,14 @@ It asks them to select their Group and Name/NetID.render
         <option value="4">4</option>
         <option value="5">5</option>
         <option value="6">6</option>
+        <option value="7">7</option>
+        <option value="8">8</option>
+        <option value="9">9</option>
+        <option value="10">10</option>
+        <option value="11">11</option>
+        <option value="12">12</option>
+        <option value="13">13</option>
+        <option value="14">14</option>
       </select>
     </div>
 
@@ -146,10 +154,10 @@ It asks them to select their Group and Name/NetID.render
   </form>
 </div>
 
-{#if loginError}
+<!-- {#if loginError}
   <div class="w-full max-w-md mb-6">
     <div class="px-8 pt-6 pb-8 mb-4 bg-white rounded shadow-md">
       <p class="text-red-500">Error: {loginError}</p>
     </div>
   </div>
-{/if}
+{/if} -->

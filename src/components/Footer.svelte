@@ -3,8 +3,7 @@ document reset button when developing locally to re-initialize a user document a
 was just created -->
 <script>
   import { getAuth, signOut } from "firebase/auth";
-  import { createEventDispatcher } from "svelte";
-  import { userStore, groupStore, loggedIn, userId, netId } from "../utils.js";
+  import { userStore, loggedIn, userId } from "../utils.js";
 
   const logout = async () => {
     // Get the current auth status
@@ -30,7 +29,7 @@ was just created -->
 >
   {#if import.meta.env.DEV}
     <div class="inline-flex ml-2">
-      <div class="mr-4">NetID: {$netId}</div>
+      <div class="mr-4">User: {$userStore["netId"]}</div>
     </div>
   {/if}
   <div>

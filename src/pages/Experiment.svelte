@@ -1,9 +1,7 @@
-<!-- Experiment.svelteHTML
+<!-- Experiment.svelte
 
- TODO: ADD VIDEO + CHAT APP HERE
- [ ] TODO: client listens for updates in messages field
- [ ] TODO: client listens for updates in currentVideoTime field
- 
+  Synced video and chat experiment
+  
 -->
 
 <script>
@@ -15,28 +13,23 @@
     formatTime,
     userStore,
     groupStore,
+    groupMessagesStore,
     addMessage,
     setUserToLogTimestamp,
-    setGroupToLogMsg,
     updateUserTimestamp,
     queryGroupTimestamps,
-    netIDsByGoup,
-    getGroupMessages,
-    // episodeUrls,
-    userId,
+    addClientToGroup,
+    getUserNameInMeta,
+    globalVars,
   } from "../utils.js";
   import {
     Player,
-    Video,
     Hls,
     DefaultUi,
     Scrim,
-    VolumeControl,
-    DefaultControls,
     Controls,
     ControlSpacer,
     MuteControl,
-    PlaybackControl,
     TimeProgress,
   } from "@vime/svelte";
   import Button from "../components/Button.svelte";
@@ -50,18 +43,13 @@
     lowLatencyMode: true,
     backBufferLength: 90,
   };
-  console.log("hlsConfig", hlsConfig);
-  // console.log("userStore", $userStore["userId"]);
-  console.log("groupStore", $groupStore);
 
+  let messages = [];
   let player;
   let paused = false;
   let time = 0;
 
-  // video-specific
-  // let epToPlay = episodeUrls[$userStore["epNum"] - 1];
-  // console.log("epToPlay", epToPlay);
-
+  // Reads out video player timestamp as it updates
   const onTimeUpdate = async (event) => {
     time = event.detail;
   };
@@ -73,7 +61,6 @@
   ];
 
   let selectedSet = 0;
-  // $: console.log(selectedSet)
   $: min = emojiSets[selectedSet].minVal;
   $: max = emojiSets[selectedSet].maxVal;
 
@@ -102,82 +89,49 @@
     message.message_string += e.target.textContent;
   };
 
-  // read in avatar from utils depending on index of netid
-  const getAvatar = (groupId, netId) => {
-    let netIdsInGroup = netIDsByGoup[0][groupId];
-    let idx = netIdsInGroup.indexOf(netId);
-    return avatarIdx[idx];
+  // Chat
+  // Grab user's first name from survivor-meta doc
+  // given their netId and groupId
+  const getUserName = async () => {
+    let netId = $userStore["netId"];
+    let groupId = $userStore["groupId"];
+    let userId = $userStore["userId"];
+    await getUserNameInMeta(groupId, netId, userId);
   };
 
-  // Chat
-  let avatarIdx = [128028, 128049, 128055, 128013]; // [ant, cat, pig, snake]
-  const avatar = String.fromCodePoint(
-    getAvatar($userStore["groupId"], $userStore["netId"])
-  );
-  let avatarEmojis = avatarIdx.map((idx) => String.fromCodePoint(idx));
-
   const placeholder_full = {
-    author: `${avatar}`,
+    author: $userStore["username"],
     absolute_timestamp: serverTime,
     message_string: "Type your message here...",
   };
   const placeholder = placeholder_full.message_string;
 
-  const greeting = {
-    author: "Server",
-    absolute_timestamp: serverTime,
-    message_string: `Server: You have joined the chat as ${avatar}`,
-  };
-
-  const callGetGroupMessages = async () => {
-    let groupId = $groupStore["groupId"];
-    let groupMessages = await getGroupMessages(groupId);
-    console.log("groupMessages", groupMessages);
-
-    return groupMessages;
-  };
-
-  let messages = [greeting];
-  let groupMessages = callGetGroupMessages();
-  // console.log("greeting messages", groupMessages);
-
-  // console.log(getGroupMessages($groupStore["groupId"]));
-  // let messages = callGetGroupMessages();
-  // console.log("messages", messages);
-
-  // let messages = [];
   let message = {
-    author: `${avatar}`,
+    author: $userStore["username"],
     absolute_timestamp: serverTime,
     message_string: "",
+    netId: $userStore["netId"],
   };
 
   // VIDEO PLAYER CONTROLS
   // this needs to be included in player
   // when video ends, experiment state ends
   const handleEnd = () => {
-    console.log("VIDEO ENDED");
     dispatch("finished");
   };
 
   $: {
     if ($userStore["logVideoTimestamp"] == true) {
-      console.log("Experiment -- logVideoTimestamp is true");
       makeUserUpdateTimestamp();
       getHighestTimestamp();
 
       // set back to false
       makeUserLogTimestamp(false);
-      // $userStore["logVideoTimestamp"] = false;
     }
 
-    if ($groupStore["newMessage"] == true) {
-      // let groupMessages = await getGroupMessages($groupStore["groupId"]);
-      // messages = groupMessages;
-      makeUserLogNewMsg();
-      let groupMessages = callGetGroupMessages();
-      // messages = groupMessages;
-      makeGroupLogMsg(false);
+    if ($groupMessagesStore) {
+      messages = $groupMessagesStore;
+      updateScroll();
     }
   }
 
@@ -187,40 +141,24 @@
   // each user should be listening for when this function is called to then call a function
   // to log their timestamp into the store
   const syncButtonPressed = async () => {
-    // console.log("Experiment -- syncButtonPressed");
-    // get group timestamps
-    let groupMembers = $groupStore["users"];
-    // let groupId = $userStore["groupId"];
-
     // Set each user in group's log timestamp to true
-    await setUserToLogTimestamp(groupMembers, true);
-
-    // Find way for all users to log their timestamp
-    // await updateUserTimestamp($userStore["userId"], time);
-
-    // console.log("Experiment -- groupId", groupId);
-    // console.log("Experiment -- groupMembers", groupMembers);
-    // let highestTimestamp = await queryGroupTimestamps(groupId, groupMembers);
-    // console.log("Experiment -- highestTimestamp", highestTimestamp);
-    // time = highestTimestamp;
+    await setUserToLogTimestamp($groupStore["users"], true);
   };
 
   // call user to update timestamp
   const makeUserUpdateTimestamp = async () => {
-    console.log("making user log timeestamp", time);
+    console.log("Making user log timestamp:", time);
     await updateUserTimestamp($userStore["userId"], time);
   };
 
-  const makeUserLogTimestamp = async (booleanValue) => {
-    await setUserToLogTimestamp($groupStore["users"], booleanValue);
+  const makeUserLogTimestamp = async (logTimestampFlag) => {
+    await setUserToLogTimestamp($groupStore["users"], logTimestampFlag);
   };
 
-  const makeGroupLogMsg = async (booleanValue) => {
-    await setGroupToLogMsg($groupStore["groupId"], booleanValue);
-  };
-
-  const makeUserLogNewMsg = async () => {
-    await getGroupMessages($groupStore["groupId"]);
+  const addClientToGroupUsers = async () => {
+    let groupDocName = $groupStore["groupId"];
+    let userId = $userStore["userId"];
+    await addClientToGroup(groupDocName, userId);
   };
 
   // Goes through each group member's user doc and returns the highest timestamp
@@ -262,25 +200,15 @@
     }
 
     let messageObj = {
-      author: `${avatar}`,
+      author: $userStore["username"],
       netId: $userStore["netId"],
       relative_timestamp: formatTime(time),
-      message_string: `${avatar}: ${message.message_string}`,
+      message_string: `${$userStore["username"]}: ${message.message_string}`,
     };
     console.log("messageObj", messageObj);
-    // messages = [...messages, messageObj, groupMessages];
 
-    // messages = g;
-    // console.log("updated messages list", messages);
-    // console.log("get group msgs", getGroupMessages($groupStore["groupId"]));
-
-    // add message to the
+    // add message to the group document
     await addMessage($groupStore["groupId"], messageObj);
-    let groupMessages = await getGroupMessages($groupStore["groupId"]);
-    messages = groupMessages;
-
-    // messages = callGetGroupMessages();
-    console.log("updated messages list", messages);
 
     updateScroll();
     message.message_string = "";
@@ -288,13 +216,17 @@
   };
 
   onMount(() => {
+    getUserName();
+    // Add 4th user's userId to the users field in group doc
+    // so that they can call group sync function
+    if (!$groupStore["users"].includes($userStore["userId"])) {
+      addClientToGroupUsers();
+    }
     syncButtonPressed();
-    groupMessages = callGetGroupMessages();
   });
 </script>
 
 <!-- Video & Chat Sidebar -->
-
 <div class="flex">
   <!-- Video -->
   <div class="basis-1/2">
@@ -308,31 +240,107 @@
         on:vmCurrentTimeChange={onTimeUpdate}
         on:vmPlaybackEnded={handleEnd}
       >
+        <!-- 14 possible episodes -->
         <!-- svelte-ignore a11y-media-has-caption -->
-        {#if $userId["epNum"] == "1"}
+        {#if $userStore["epNum"] == "1"}
           <Hls version="latest" config={hlsConfig} crossOrigin="anonymous">
             <source
               data-src="https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/hls/Survivor_S28E01_Hot_Girl_with_a_Grudge_1080p.m3u8"
               type="application/x-mpegURL"
             />
           </Hls>
-        {:else if $userId["epNum"] == "2"}
-          <Hls version="latest" config={hlsConfig}>
+        {:else if $userStore["epNum"] == "2"}
+          <Hls version="latest" config={hlsConfig} crossOrigin="anonymous">
             <source
               data-src="https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/hls/Survivor_S28E02_Cops_R_Us_720p.m3u8"
               type="application/x-mpegURL"
             />
           </Hls>
+        {:else if $userStore["epNum"] == "3"}
+          <Hls version="latest" config={hlsConfig} crossOrigin="anonymous">
+            <source
+              data-src="https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/hls/Survivor_S28E03_Our_Time_to_Shine_720p.m3u8"
+              type="application/x-mpegURL"
+            />
+          </Hls>
+        {:else if $userStore["epNum"] == "4"}
+          <Hls version="latest" config={hlsConfig} crossOrigin="anonymous">
+            <source
+              data-src="https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/hls/Survivor_S28E04_Odd_One_Out_1080.m3u8"
+              type="application/x-mpegURL"
+            />
+          </Hls>
+        {:else if $userStore["epNum"] == "5"}
+          <Hls version="latest" config={hlsConfig} crossOrigin="anonymous">
+            <source
+              data-src="https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/hls/Survivor_S28E05_We_Found_Our_Zombies_720p.m3u8"
+              type="application/x-mpegURL"
+            />
+          </Hls>
+        {:else if $userStore["epNum"] == "6"}
+          <Hls version="latest" config={hlsConfig} crossOrigin="anonymous">
+            <source
+              data-src="https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/hls/Survivor_S28E06_Head_of_the_Snake_720p.m3u8"
+              type="application/x-mpegURL"
+            />
+          </Hls>
+        {:else if $userStore["epNum"] == "7"}
+          <Hls version="latest" config={hlsConfig} crossOrigin="anonymous">
+            <source
+              data-src="https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/hls/Survivor_S28E07_Mad_Treasure_Hunt_720p.m3u8"
+              type="application/x-mpegURL"
+            />
+          </Hls>
+        {:else if $userStore["epNum"] == "8"}
+          <Hls version="latest" config={hlsConfig} crossOrigin="anonymous">
+            <source
+              data-src="https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/hls/Survivor_S28E08_Bag_of_Tricks_720p.m3u8"
+              type="application/x-mpegURL"
+            />
+          </Hls>
+        {:else if $userStore["epNum"] == "9"}
+          <Hls version="latest" config={hlsConfig} crossOrigin="anonymous">
+            <source
+              data-src="https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/hls/Survivor_S28E09_Sitting_in_My_Spy_Shack_720p.m3u8"
+              type="application/x-mpegURL"
+            />
+          </Hls>
+        {:else if $userStore["epNum"] == "10"}
+          <Hls version="latest" config={hlsConfig} crossOrigin="anonymous">
+            <source
+              data-src="https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/hls/Survivor_S28E10_Chaos_Is_My_Friend_720p.m3u8"
+              type="application/x-mpegURL"
+            />
+          </Hls>
+        {:else if $userStore["epNum"] == "11"}
+          <Hls version="latest" config={hlsConfig} crossOrigin="anonymous">
+            <source
+              data-src="https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/hls/Survivor_S28E11_Havoc_to_Wreak_720p.m3u8"
+              type="application/x-mpegURL"
+            />
+          </Hls>
+        {:else if $userStore["epNum"] == "12"}
+          <Hls version="latest" config={hlsConfig} crossOrigin="anonymous">
+            <source
+              data-src="https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/hls/Survivor_S28E12_Straw_That_Broke_The_Camels_Back_720p.m3u8"
+              type="application/x-mpegURL"
+            />
+          </Hls>
+        {:else if $userStore["epNum"] == "13"}
+          <Hls version="latest" config={hlsConfig} crossOrigin="anonymous">
+            <source
+              data-src="https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/hls/Survivor_S28E13_It's_Do_or_Die_720p.m3u8"
+              type="application/x-mpegURL"
+            />
+          </Hls>
+        {:else if $userStore["epNum"] == "14"}
+          <Hls version="latest" config={hlsConfig} crossOrigin="anonymous">
+            <source
+              data-src="https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/hls/Survivor_S28E14_Cagayan_Reunion_Episode_720p.m3u8"
+              type="application/x-mpegURL"
+            />
+          </Hls>
         {/if}
-
-        <!-- Regular video player -->
-        <!-- <Video>
-          <source
-            data-src="https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/Survivor_S28E01_Hot_Girl_with_a_Grudge_1080p.mp4"
-            type="video/mp4"
-          />
-        </Video> -->
-
         <DefaultUi noControls noClickToPlay noDblClickFullscreen>
           <Scrim />
           <Controls fullWidth pin="topLeft">
@@ -364,32 +372,35 @@
     <!-- Chat window -->
     <div id="chatWindow">
       <ul id="messages">
-        {#each messages as message}
-          <!-- Styling message when sent from user -->
-          {#if message.author === `${avatar}`}
-            <li transition:fade>{message.message_string}</li>
-            <div id="timestamp">
-              {message.relative_timestamp}
-            </div>
-            <!-- Server message styling -->
-          {:else if message.author === "Server"}
-            <li class="server" transition:fade>
-              {message.message_string}
-            </li>
-            <!-- Messages from others styling -->
-          {:else}
-            <li class="other" transition:fade>
-              {message.message_string}
-            </li>
-            <div id="timestamp-other">
-              {message.relative_timestamp}
-            </div>
-          {/if}
-        {/each}
+        {#if Object.keys(messages).length > 0}
+          {#each messages as message}
+            <!-- Styling message when sent from user -->
+            {#if message.author === $userStore["username"]}
+              <li transition:fade>{message.message_string}</li>
+              <div id="timestamp">
+                {message.relative_timestamp}
+              </div>
+              <!-- Server message styling -->
+            {:else if message.author === "Server"}
+              <li class="server" transition:fade>
+                {message.message_string}
+              </li>
+              <!-- Messages from others styling -->
+            {:else}
+              <li class="other" transition:fade>
+                {message.message_string}
+              </li>
+              <div id="timestamp-other">
+                {message.relative_timestamp}
+              </div>
+            {/if}
+          {/each}
+        {/if}
       </ul>
     </div>
     <form action="">
       <div id="btn-emoji-icon-cont">
+        <!-- svelte-ignore a11y-no-noninteractive-tabindex -->
         <div
           id="emoji-opener-icon"
           on:click={() => (modalOpen = !modalOpen)}
@@ -427,14 +438,17 @@
         <div id="emoji-cont" transition:fly={{ y: -30 }}>
           <header>
             {#each setIcons as icon, i}
+              <!-- svelte-ignore a11y-click-events-have-key-events -->
               <div data-id={i} on:click={chooseEmojiSet}>
                 {String.fromCodePoint(icon)}
               </div>
             {/each}
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
             <div id="closer-icon" on:click={() => (modalOpen = false)}>X</div>
           </header>
 
           {#each emojis as emoji}
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
             <span on:click={addEmoji}>{emoji}</span>
           {/each}
         </div>
@@ -486,22 +500,7 @@
     --server-bg-color: #fff;
     --form-btn-color: #f20089;
   }
-  /* 
-  p {
-    margin: 1em;
-    color: #000;
-  }
 
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    overflow: hidden;
-  } */
-
-  /* div {
-    position: relative;
-  } */
   span {
     padding: 0.2em 0.5em;
     color: white;
@@ -509,19 +508,6 @@
     font-size: 1.3em;
     opacity: 0.7;
   }
-
-  /* .main {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    height: 95vh;
-    width: 500px;
-    max-width: 600px;
-    right: 2em;
-    position: fixed;
-    overflow: auto;
-  } */
 
   form {
     background: #000000;
@@ -540,12 +526,6 @@
     color: #000;
     font-size: 12pt;
   }
-
-  /* @media screen and (device-aspect-ratio: 375/667) {
-    form input {
-      font-size: 16px;
-    }
-  } */
 
   form button {
     background: #000;
@@ -572,12 +552,6 @@
     overflow: auto;
     border-radius: 1em 1em 0em 0em;
   }
-
-  /* @media (min-height: 500px) {
-    #chatWindow {
-      height: 500px;
-    }
-  } */
 
   #messages {
     align-self: center;
@@ -646,17 +620,11 @@
 
   /* VIDEO */
 
-  /* #video_cont {
-    width: 50%;
-    max-width: 600px;
-  } */
-
   :global(vm-playback-control) {
     --vm-control-scale: 1.7;
   }
 
   /* EMOJI PANEL */
-
   #btn-emoji-icon-cont {
     display: flex;
     align-items: center;
@@ -688,8 +656,6 @@
     flex-wrap: wrap;
     justify-content: flex-start;
     margin-left: 0px;
-    /* 		border: 1px solid gray;
-		background: #ddd; */
   }
 
   #emoji-cont header {

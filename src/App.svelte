@@ -1,15 +1,21 @@
 <script>
   import { onAuthStateChanged } from "firebase/auth";
-  import { doc, onSnapshot } from "firebase/firestore";
+  import {
+    doc,
+    onSnapshot,
+    collection,
+    query,
+    orderBy,
+  } from "firebase/firestore";
   import { onMount } from "svelte";
   import {
     auth,
     db,
     userStore,
     groupStore,
+    groupMessagesStore,
     loggedIn,
     userId,
-    resetGroupData,
     reqStateChange,
     reqUserStateChange,
   } from "./utils.js";
@@ -26,6 +32,7 @@
   // Experiment start -- video watching & chat room
   import Experiment from "./pages/Experiment.svelte";
 
+  // Thank you page to redirect to qualtrics when video is done
   import Debrief from "./pages/Debrief.svelte";
 
   // "Helper" components
@@ -35,8 +42,7 @@
   // TODO: Add LogRocket
 
   // VARIABLES USED WITHIN App.svelte
-  let unsubscribe_user, unsubscribe_group, unsubscribe_meta;
-  let unsubscribeUserId;
+  let unsubscribe_user, unsubscribe_group, unsubscribe_group_msgs;
 
   // Data updating API explanation:
   // See also database transaction write function in utils.js!
@@ -88,6 +94,12 @@
     await reqStateChange(newState);
   };
 
+  const redirectToQualtrics = () => {
+    let qualtricsURL =
+      "https://dartmouth.co1.qualtrics.com/jfe/form/SV_dbWGGHYfLGhcAgS";
+    location.replace(qualtricsURL);
+  };
+
   // When the app first starts up we check to see if the user is logged in and if they
   // aren't we set the value of the $loggedIn svelte store to false which takes them to
   // the <Login/> page. We also unsubscribe to any data we were already subscribed to.
@@ -106,6 +118,10 @@
         if (unsubscribe_group) {
           unsubscribe_group();
           unsubscribe_group = null;
+        }
+        if (unsubscribe_group_msgs) {
+          unsubscribe_group_msgs();
+          unsubscribe_group_msgs = null;
         }
       } else {
         // Set the userId store to the value on their local computer because if they're
@@ -139,23 +155,33 @@
                       groupStore.set(groupDoc.data());
                     }
                   );
-
-                  // Also subscribe to their meta doc
-                  // unsubscribe_meta = onSnapshot(
-                  //   doc(db, "survivor-meta", groupId),
-                  //   (metaDoc) => {
-                  //     metaDoc.set(metaDoc.data());
-                  //   }
-                  // );
+                  let groupDocRef = doc(
+                    db,
+                    "survivor-groups",
+                    combinedGroupIdEpNum
+                  );
+                  let messagesCollectionRef = collection(
+                    groupDocRef,
+                    "messages"
+                  );
+                  // subscribe to group messages collection
+                  let messagesQuery = query(
+                    messagesCollectionRef,
+                    orderBy("absolute_timestamp", "asc")
+                  );
+                  unsubscribe_group_msgs = onSnapshot(
+                    messagesQuery,
+                    (querySnapshot) => {
+                      const groupMessages = querySnapshot.docs.map(
+                        (groupMessagesDoc) => groupMessagesDoc.data()
+                      );
+                      groupMessagesStore.set(groupMessages);
+                    }
+                  );
                 }
               } else {
                 console.log("userDoc does not exist");
               }
-
-              // unsubscribeUserId = userId.subscribe((value) => {
-              //   // This callback will be called whenever the userId store value changes
-              //   console.log(`User ${value} subbed to user data`);
-              // });
             }
           );
         } catch (error) {
@@ -174,6 +200,8 @@
     "App.svelte -- groupStore['currentState']",
     $groupStore["currentState"]
   );
+
+  console.log("App.svelte -- groupMessagesStore", $groupMessagesStore);
 </script>
 
 <!-- This is our main markup. It uses the currentState field of the userStore to
@@ -190,9 +218,7 @@ determine what page a user should be on. -->
     {:else if $groupStore["currentState"] === "countdown"}
       <CountdownTransition on:finished={() => updateState("experiment")} />
     {:else if $groupStore["currentState"] === "experiment"}
-      <Experiment on:finished={() => updateState("debrief")} />
-    {:else if $groupStore["currentState"] === "debrief"}
-      <Debrief />
+      <Experiment on:finished={() => redirectToQualtrics()} />
     {/if}
   {/if}
 </main>
