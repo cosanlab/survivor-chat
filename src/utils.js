@@ -354,13 +354,10 @@ export const initGroup = async (groupId, netId, epNum) => {
       await setDoc(groupDocEpRef, {
         counter: [netId], // initialize counter as empty array - will be updated by reqStateChange()
         users: [], // initialize users as empty array - will be updated by reqStateChange()
-        host: netId, // initialize host as first user to join
         groupId: groupId,
         epNum: epNum,
         logVideoTimestamp: false,
         currentState: 'request-full-screen', // start group at instructions screen
-        videoTime: 0, // initialize video time as 0,
-        currentVideoTimes: [], // initialize current video time as 0,
       });
       console.log(`New group ${groupId} successfully created with document ID: ${groupDocEpRef.id}`);
     } catch (error) {
@@ -413,15 +410,16 @@ export const updateGroupTimestamp = async (groupId, userId, vidTimeStamp) => {
 }
 
 // Set each user's logVideoTimestamp to true
-export const setUserToLogTimestamp = async (groupMembers, booleanValue) => {
+export const setUserToLogTimestamp = async (groupMembers, logTimestampFlag) => {
   // Iterate through groupMembers array
   for (let i = 0; i < groupMembers.length; i++) {
+    console.log("setUserToLogTimestamp -- groupMembers[i]", groupMembers[i]);
     // Create user doc ref
     const userDocRef = doc(db, participantsCollectionName, groupMembers[i]);
 
     // Write host user's video timestamp to group doc
     await updateDoc(userDocRef, {
-      logVideoTimestamp: booleanValue
+      logVideoTimestamp: logTimestampFlag
     });
   }
 }
@@ -766,6 +764,34 @@ export const reqUserStateChange = async (newState) => {
     console.error(`Error updating state to ${newState} for user: ${userId}`, error);
   }
 };
+
+// Add client to group doc users field
+export const addClientToGroup = async (groupDocName, userId) => {
+  const groupDocEpRef = doc(db, groupsCollectionName, groupDocName);
+
+  try {
+    await runTransaction(db, async (transaction) => {
+
+      // Get the latest data, rather than relying on the store
+      const document = await transaction.get(groupDocEpRef);
+      if (!document.exists()) {
+        throw "Document does not exist!";
+      }
+      // Freshest data
+      const { users } = document.data();
+
+      // Add the client's userId to the users field if they're not already in it
+      if (!users.includes(userId)) {
+        await transaction.update(groupDocEpRef, { users: [...users, userId] });
+      } else {
+        console.log("Ignoring duplicate request");
+      }
+    });
+  } catch (error) {
+    console.error(`Error adding userId ${userId} for group: ${groupDocName}`, error);
+  }
+};
+
 
 
 export const saveDebrief = async (data) => {

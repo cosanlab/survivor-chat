@@ -1,9 +1,7 @@
-<!-- Experiment.svelteHTML
+<!-- Experiment.svelte
 
- TODO: ADD VIDEO + CHAT APP HERE
- [ ] TODO: client listens for updates in messages field
- [ ] TODO: client listens for updates in currentVideoTime field
- 
+  Synced video and chat experiment
+  
 -->
 
 <script>
@@ -21,20 +19,16 @@
     updateUserTimestamp,
     queryGroupTimestamps,
     netIDsByGoup,
-    userId,
+    addClientToGroup,
   } from "../utils.js";
   import {
     Player,
-    Video,
     Hls,
     DefaultUi,
     Scrim,
-    VolumeControl,
-    DefaultControls,
     Controls,
     ControlSpacer,
     MuteControl,
-    PlaybackControl,
     TimeProgress,
   } from "@vime/svelte";
   import Button from "../components/Button.svelte";
@@ -51,9 +45,7 @@
   console.log("hlsConfig", hlsConfig);
   console.log("groupStore", $groupStore);
   console.log("Eperiment -- groupMessagesStore", $groupMessagesStore);
-  // let messages = $groupMessagesStore;
   let messages = [];
-  // console.log("Eperiment -- messages", messages);
 
   let player;
   let paused = false;
@@ -99,6 +91,9 @@
     message.message_string += e.target.textContent;
   };
 
+  // Chat
+  // TODO: change avatars to first names from survivor-meta doc
+  let avatarIdx = [128028, 128049, 128055, 128013]; // [ant, cat, pig, snake]
   // read in avatar from utils depending on index of netid
   const getAvatar = (groupId, netId) => {
     let netIdsInGroup = netIDsByGoup[0][groupId];
@@ -106,9 +101,6 @@
     return avatarIdx[idx];
   };
 
-  // Chat
-  // TODO: change avatars to first names from survivor-meta doc
-  let avatarIdx = [128028, 128049, 128055, 128013]; // [ant, cat, pig, snake]
   const avatar = String.fromCodePoint(
     getAvatar($userStore["groupId"], $userStore["netId"])
   );
@@ -121,14 +113,11 @@
   };
   const placeholder = placeholder_full.message_string;
 
-  // console.log(getGroupMessages($groupStore["groupId"]));
-  // let messages = callGetGroupMessages();
-
-  // let messages = [];
   let message = {
     author: `${avatar}`,
     absolute_timestamp: serverTime,
     message_string: "",
+    netId: $userStore["netId"],
   };
 
   // VIDEO PLAYER CONTROLS
@@ -147,7 +136,6 @@
 
       // set back to false
       makeUserLogTimestamp(false);
-      // $userStore["logVideoTimestamp"] = false;
     }
 
     if ($groupMessagesStore) {
@@ -163,32 +151,24 @@
   // each user should be listening for when this function is called to then call a function
   // to log their timestamp into the store
   const syncButtonPressed = async () => {
-    // console.log("Experiment -- syncButtonPressed");
-    // get group timestamps
-    let groupMembers = $groupStore["users"];
-    // let groupId = $userStore["groupId"];
-
     // Set each user in group's log timestamp to true
-    await setUserToLogTimestamp(groupMembers, true);
-
-    // Find way for all users to log their timestamp
-    // await updateUserTimestamp($userStore["userId"], time);
-
-    // console.log("Experiment -- groupId", groupId);
-    // console.log("Experiment -- groupMembers", groupMembers);
-    // let highestTimestamp = await queryGroupTimestamps(groupId, groupMembers);
-    // console.log("Experiment -- highestTimestamp", highestTimestamp);
-    // time = highestTimestamp;
+    await setUserToLogTimestamp($groupStore["users"], true);
   };
 
   // call user to update timestamp
   const makeUserUpdateTimestamp = async () => {
-    console.log("making user log timeestamp", time);
+    console.log("Making user log timestamp:", time);
     await updateUserTimestamp($userStore["userId"], time);
   };
 
-  const makeUserLogTimestamp = async (booleanValue) => {
-    await setUserToLogTimestamp($groupStore["users"], booleanValue);
+  const makeUserLogTimestamp = async (logTimestampFlag) => {
+    await setUserToLogTimestamp($groupStore["users"], logTimestampFlag);
+  };
+
+  const addClientToGroupUsers = async () => {
+    let groupDocName = $groupStore["groupId"];
+    let userId = $userStore["userId"];
+    await addClientToGroup(groupDocName, userId);
   };
 
   // Goes through each group member's user doc and returns the highest timestamp
@@ -237,7 +217,7 @@
     };
     console.log("messageObj", messageObj);
 
-    // add message to the
+    // add message to the group document
     await addMessage($groupStore["groupId"], messageObj);
 
     updateScroll();
@@ -246,12 +226,11 @@
   };
 
   onMount(() => {
-    // TODO: add a way for 4th user to add their userId to the users field in group doc
+    // Add 4th user's userId to the users field in group doc
     // so that they can call group sync function
-    // if ($groupMessagesStore) {
-    //   messages = $groupMessagesStore;
-    //   console.log("onMount -- messages", messages);
-    // }
+    if (!$groupStore["users"].includes($userStore["userId"])) {
+      addClientToGroupUsers();
+    }
     syncButtonPressed();
   });
 </script>
@@ -270,6 +249,7 @@
         on:vmCurrentTimeChange={onTimeUpdate}
         on:vmPlaybackEnded={handleEnd}
       >
+        <!-- TODO: add the rest of the .m3u8 files -->
         <!-- svelte-ignore a11y-media-has-caption -->
         {#if $userStore["epNum"] == "1"}
           <Hls version="latest" config={hlsConfig} crossOrigin="anonymous">
@@ -286,14 +266,6 @@
             />
           </Hls>
         {/if}
-
-        <!-- Regular video player -->
-        <!-- <Video>
-          <source
-            data-src="https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/Survivor_S28E01_Hot_Girl_with_a_Grudge_1080p.mp4"
-            type="video/mp4"
-          />
-        </Video> -->
 
         <DefaultUi noControls noClickToPlay noDblClickFullscreen>
           <Scrim />

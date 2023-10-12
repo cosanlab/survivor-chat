@@ -6,7 +6,6 @@
     collection,
     query,
     orderBy,
-    getDocs,
   } from "firebase/firestore";
   import { onMount } from "svelte";
   import {
