@@ -42,7 +42,7 @@
 
   LogRocket.init("cosan/survivor-2f6vd");
   LogRocket.identify("THE_USER_ID_IN_YOUR_APP", {
-    name: $userStore["username"],
+    name: $userStore["userId"],
   });
 
   // VARIABLES USED WITHIN App.svelte
