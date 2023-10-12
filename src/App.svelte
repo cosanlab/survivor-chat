@@ -33,6 +33,7 @@
   // Experiment start -- video watching & chat room
   import Experiment from "./pages/Experiment.svelte";
 
+  // Thank you page to redirect to qualtrics when video is done
   import Debrief from "./pages/Debrief.svelte";
 
   // "Helper" components
@@ -43,7 +44,6 @@
 
   // VARIABLES USED WITHIN App.svelte
   let unsubscribe_user, unsubscribe_group, unsubscribe_group_msgs;
-  let unsubscribeUserId;
 
   // Data updating API explanation:
   // See also database transaction write function in utils.js!
@@ -93,6 +93,10 @@
     );
     console.log("App -- updateState -- newState", newState);
     await reqStateChange(newState);
+  };
+
+  const redirectToQualtrics = () => {
+    window.location.href = "https://google.com";
   };
 
   // When the app first starts up we check to see if the user is logged in and if they
@@ -150,10 +154,6 @@
                       groupStore.set(groupDoc.data());
                     }
                   );
-                  console.log(
-                    "App.svelte -- combinedGroupIdEpNum",
-                    combinedGroupIdEpNum
-                  );
                   let groupDocRef = doc(
                     db,
                     "survivor-groups",
@@ -175,11 +175,6 @@
                         (groupMessagesDoc) => groupMessagesDoc.data()
                       );
                       groupMessagesStore.set(groupMessages);
-                      console.log("App.svelte -- groupMessages", groupMessages);
-                      console.log(
-                        "App.svelte -- groupMessagesStore",
-                        $groupMessagesStore
-                      );
                     }
                   );
                 }
@@ -224,7 +219,7 @@ determine what page a user should be on. -->
     {:else if $groupStore["currentState"] === "experiment"}
       <Experiment on:finished={() => updateState("debrief")} />
     {:else if $groupStore["currentState"] === "debrief"}
-      <Debrief />
+      <Debrief on:finished={() => redirectToQualtrics()} />
     {/if}
   {/if}
 </main>

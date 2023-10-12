@@ -18,8 +18,8 @@
     setUserToLogTimestamp,
     updateUserTimestamp,
     queryGroupTimestamps,
-    netIDsByGoup,
     addClientToGroup,
+    getUserNameInMeta,
   } from "../utils.js";
   import {
     Player,
@@ -42,15 +42,13 @@
     lowLatencyMode: true,
     backBufferLength: 90,
   };
-  console.log("hlsConfig", hlsConfig);
-  console.log("groupStore", $groupStore);
-  console.log("Eperiment -- groupMessagesStore", $groupMessagesStore);
-  let messages = [];
 
+  let messages = [];
   let player;
   let paused = false;
   let time = 0;
 
+  // Reads out video player timestamp as it updates
   const onTimeUpdate = async (event) => {
     time = event.detail;
   };
@@ -62,7 +60,6 @@
   ];
 
   let selectedSet = 0;
-  // $: console.log(selectedSet)
   $: min = emojiSets[selectedSet].minVal;
   $: max = emojiSets[selectedSet].maxVal;
 
@@ -92,29 +89,24 @@
   };
 
   // Chat
-  // TODO: change avatars to first names from survivor-meta doc
-  let avatarIdx = [128028, 128049, 128055, 128013]; // [ant, cat, pig, snake]
-  // read in avatar from utils depending on index of netid
-  const getAvatar = (groupId, netId) => {
-    let netIdsInGroup = netIDsByGoup[0][groupId];
-    let idx = netIdsInGroup.indexOf(netId);
-    return avatarIdx[idx];
+  // Grab user's first name from survivor-meta doc
+  // given their netId and groupId
+  const getUserName = async () => {
+    let netId = $userStore["netId"];
+    let groupId = $userStore["groupId"];
+    let userId = $userStore["userId"];
+    await getUserNameInMeta(groupId, netId, userId);
   };
 
-  const avatar = String.fromCodePoint(
-    getAvatar($userStore["groupId"], $userStore["netId"])
-  );
-  let avatarEmojis = avatarIdx.map((idx) => String.fromCodePoint(idx));
-
   const placeholder_full = {
-    author: `${avatar}`,
+    author: $userStore["username"],
     absolute_timestamp: serverTime,
     message_string: "Type your message here...",
   };
   const placeholder = placeholder_full.message_string;
 
   let message = {
-    author: `${avatar}`,
+    author: $userStore["username"],
     absolute_timestamp: serverTime,
     message_string: "",
     netId: $userStore["netId"],
@@ -140,6 +132,7 @@
 
     if ($groupMessagesStore) {
       messages = $groupMessagesStore;
+
       updateScroll();
       console.log("Experiment -- messages", messages);
     }
@@ -210,10 +203,10 @@
     }
 
     let messageObj = {
-      author: `${avatar}`,
+      author: $userStore["username"],
       netId: $userStore["netId"],
       relative_timestamp: formatTime(time),
-      message_string: `${avatar}: ${message.message_string}`,
+      message_string: `${$userStore["username"]}: ${message.message_string}`,
     };
     console.log("messageObj", messageObj);
 
@@ -226,6 +219,7 @@
   };
 
   onMount(() => {
+    getUserName();
     // Add 4th user's userId to the users field in group doc
     // so that they can call group sync function
     if (!$groupStore["users"].includes($userStore["userId"])) {
@@ -301,7 +295,7 @@
         {#if Object.keys(messages).length > 0}
           {#each messages as message}
             <!-- Styling message when sent from user -->
-            {#if message.author === `${avatar}`}
+            {#if message.author === $userStore["username"]}
               <li transition:fade>{message.message_string}</li>
               <div id="timestamp">
                 {message.relative_timestamp}
@@ -426,22 +420,7 @@
     --server-bg-color: #fff;
     --form-btn-color: #f20089;
   }
-  /* 
-  p {
-    margin: 1em;
-    color: #000;
-  }
 
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    overflow: hidden;
-  } */
-
-  /* div {
-    position: relative;
-  } */
   span {
     padding: 0.2em 0.5em;
     color: white;
@@ -449,19 +428,6 @@
     font-size: 1.3em;
     opacity: 0.7;
   }
-
-  /* .main {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    height: 95vh;
-    width: 500px;
-    max-width: 600px;
-    right: 2em;
-    position: fixed;
-    overflow: auto;
-  } */
 
   form {
     background: #000000;
@@ -480,12 +446,6 @@
     color: #000;
     font-size: 12pt;
   }
-
-  /* @media screen and (device-aspect-ratio: 375/667) {
-    form input {
-      font-size: 16px;
-    }
-  } */
 
   form button {
     background: #000;
@@ -512,12 +472,6 @@
     overflow: auto;
     border-radius: 1em 1em 0em 0em;
   }
-
-  /* @media (min-height: 500px) {
-    #chatWindow {
-      height: 500px;
-    }
-  } */
 
   #messages {
     align-self: center;
@@ -586,17 +540,11 @@
 
   /* VIDEO */
 
-  /* #video_cont {
-    width: 50%;
-    max-width: 600px;
-  } */
-
   :global(vm-playback-control) {
     --vm-control-scale: 1.7;
   }
 
   /* EMOJI PANEL */
-
   #btn-emoji-icon-cont {
     display: flex;
     align-items: center;
@@ -628,8 +576,6 @@
     flex-wrap: wrap;
     justify-content: flex-start;
     margin-left: 0px;
-    /* 		border: 1px solid gray;
-		background: #ddd; */
   }
 
   #emoji-cont header {
