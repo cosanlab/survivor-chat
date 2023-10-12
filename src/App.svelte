@@ -16,7 +16,6 @@
     groupMessagesStore,
     loggedIn,
     userId,
-    resetGroupData,
     reqStateChange,
     reqUserStateChange,
   } from "./utils.js";
@@ -96,7 +95,9 @@
   };
 
   const redirectToQualtrics = () => {
-    window.location.href = "https://google.com";
+    let qualtricsURL =
+      "https://dartmouth.co1.qualtrics.com/jfe/form/SV_dbWGGHYfLGhcAgS";
+    location.replace(qualtricsURL);
   };
 
   // When the app first starts up we check to see if the user is logged in and if they
@@ -217,9 +218,7 @@ determine what page a user should be on. -->
     {:else if $groupStore["currentState"] === "countdown"}
       <CountdownTransition on:finished={() => updateState("experiment")} />
     {:else if $groupStore["currentState"] === "experiment"}
-      <Experiment on:finished={() => updateState("debrief")} />
-    {:else if $groupStore["currentState"] === "debrief"}
-      <Debrief on:finished={() => redirectToQualtrics()} />
+      <Experiment on:finished={() => redirectToQualtrics()} />
     {/if}
   {/if}
 </main>

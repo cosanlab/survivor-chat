@@ -80,7 +80,7 @@ export const globalVars = {
 // GLOBAL EXPERIMENT FUNCTIONS
 //############################
 
-// TODO: Read this from meta collection
+// FUTURE TODO: Read this from meta collection
 // but for now, too lazy so we hard-code it
 // Options for the dropdown menu in Login.svelte
 // All NetIDs

@@ -20,6 +20,7 @@
     queryGroupTimestamps,
     addClientToGroup,
     getUserNameInMeta,
+    globalVars,
   } from "../utils.js";
   import {
     Player,
@@ -116,13 +117,11 @@
   // this needs to be included in player
   // when video ends, experiment state ends
   const handleEnd = () => {
-    console.log("VIDEO ENDED");
     dispatch("finished");
   };
 
   $: {
     if ($userStore["logVideoTimestamp"] == true) {
-      console.log("Experiment -- logVideoTimestamp is true");
       makeUserUpdateTimestamp();
       getHighestTimestamp();
 
@@ -132,9 +131,7 @@
 
     if ($groupMessagesStore) {
       messages = $groupMessagesStore;
-
       updateScroll();
-      console.log("Experiment -- messages", messages);
     }
   }
 
@@ -243,7 +240,7 @@
         on:vmCurrentTimeChange={onTimeUpdate}
         on:vmPlaybackEnded={handleEnd}
       >
-        <!-- TODO: add the rest of the .m3u8 files -->
+        <!-- 14 possible episodes -->
         <!-- svelte-ignore a11y-media-has-caption -->
         {#if $userStore["epNum"] == "1"}
           <Hls version="latest" config={hlsConfig} crossOrigin="anonymous">
@@ -253,9 +250,93 @@
             />
           </Hls>
         {:else if $userStore["epNum"] == "2"}
-          <Hls version="latest" config={hlsConfig}>
+          <Hls version="latest" config={hlsConfig} crossOrigin="anonymous">
             <source
               data-src="https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/hls/Survivor_S28E02_Cops_R_Us_720p.m3u8"
+              type="application/x-mpegURL"
+            />
+          </Hls>
+        {:else if $userStore["epNum"] == "3"}
+          <Hls version="latest" config={hlsConfig} crossOrigin="anonymous">
+            <source
+              data-src="https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/hls/Survivor_S28E03_Our_Time_to_Shine_720p.m3u8"
+              type="application/x-mpegURL"
+            />
+          </Hls>
+        {:else if $userStore["epNum"] == "4"}
+          <Hls version="latest" config={hlsConfig} crossOrigin="anonymous">
+            <source
+              data-src="https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/hls/Survivor_S28E04_Odd_One_Out_1080.m3u8"
+              type="application/x-mpegURL"
+            />
+          </Hls>
+        {:else if $userStore["epNum"] == "5"}
+          <Hls version="latest" config={hlsConfig} crossOrigin="anonymous">
+            <source
+              data-src="https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/hls/Survivor_S28E05_We_Found_Our_Zombies_720p.m3u8"
+              type="application/x-mpegURL"
+            />
+          </Hls>
+        {:else if $userStore["epNum"] == "6"}
+          <Hls version="latest" config={hlsConfig} crossOrigin="anonymous">
+            <source
+              data-src="https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/hls/Survivor_S28E06_Head_of_the_Snake_720p.m3u8"
+              type="application/x-mpegURL"
+            />
+          </Hls>
+        {:else if $userStore["epNum"] == "7"}
+          <Hls version="latest" config={hlsConfig} crossOrigin="anonymous">
+            <source
+              data-src="https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/hls/Survivor_S28E07_Mad_Treasure_Hunt_720p.m3u8"
+              type="application/x-mpegURL"
+            />
+          </Hls>
+        {:else if $userStore["epNum"] == "8"}
+          <Hls version="latest" config={hlsConfig} crossOrigin="anonymous">
+            <source
+              data-src="https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/hls/Survivor_S28E08_Bag_of_Tricks_720p.m3u8"
+              type="application/x-mpegURL"
+            />
+          </Hls>
+        {:else if $userStore["epNum"] == "9"}
+          <Hls version="latest" config={hlsConfig} crossOrigin="anonymous">
+            <source
+              data-src="https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/hls/Survivor_S28E09_Sitting_in_My_Spy_Shack_720p.m3u8"
+              type="application/x-mpegURL"
+            />
+          </Hls>
+        {:else if $userStore["epNum"] == "10"}
+          <Hls version="latest" config={hlsConfig} crossOrigin="anonymous">
+            <source
+              data-src="https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/hls/Survivor_S28E10_Chaos_Is_My_Friend_720p.m3u8"
+              type="application/x-mpegURL"
+            />
+          </Hls>
+        {:else if $userStore["epNum"] == "11"}
+          <Hls version="latest" config={hlsConfig} crossOrigin="anonymous">
+            <source
+              data-src="https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/hls/Survivor_S28E11_Havoc_to_Wreak_720p.m3u8"
+              type="application/x-mpegURL"
+            />
+          </Hls>
+        {:else if $userStore["epNum"] == "12"}
+          <Hls version="latest" config={hlsConfig} crossOrigin="anonymous">
+            <source
+              data-src="https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/hls/Survivor_S28E12_Straw_That_Broke_The_Camels_Back_720p.m3u8"
+              type="application/x-mpegURL"
+            />
+          </Hls>
+        {:else if $userStore["epNum"] == "13"}
+          <Hls version="latest" config={hlsConfig} crossOrigin="anonymous">
+            <source
+              data-src="https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/hls/Survivor_S28E13_It's_Do_or_Die_720p.m3u8"
+              type="application/x-mpegURL"
+            />
+          </Hls>
+        {:else if $userStore["epNum"] == "14"}
+          <Hls version="latest" config={hlsConfig} crossOrigin="anonymous">
+            <source
+              data-src="https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/hls/Survivor_S28E14_Cagayan_Reunion_Episode_720p.m3u8"
               type="application/x-mpegURL"
             />
           </Hls>
