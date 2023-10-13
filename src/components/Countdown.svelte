@@ -8,7 +8,6 @@
 
   let timer = null;
   const numbers = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].reverse();
-  $: minutes = Math.floor(countdown / 60);
   $: seconds = countdown % 60;
 
   let secondH = tweened((9 - Math.floor((countdown % 60) / 10)) * 128, {
@@ -17,8 +16,6 @@
   let secondL = tweened((9 - Math.floor((countdown % 60) % 10)) * 128, {
     duration: 300,
   });
-
-  const val = tweened(0, { duration: 500 });
 
   onMount(() => {
     timer = setInterval(() => {
@@ -45,14 +42,6 @@
     }
   }
 </script>
-
-<!-- <ul>
-  {#each numbers as num, i}
-    <li class="num" style="transform: translateY(-{$secondH}px);">
-      <span>{num}</span>
-    </li>
-  {/each}
-</ul> -->
 
 <ul>
   {#each numbers as num, i}

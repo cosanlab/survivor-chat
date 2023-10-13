@@ -13,6 +13,10 @@ firebase-debug.log
 # firebase.json
 .firebase
 
+# deployment
 .github/workflows/firebase-hosting-pull-request.yml
 .github/workflows/firebase-hosting-merge.yml
+*public/
+
+# api keys
 ServiceAccountKey.json

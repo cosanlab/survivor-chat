@@ -32,9 +32,6 @@
   // Experiment start -- video watching & chat room
   import Experiment from "./pages/Experiment.svelte";
 
-  // Thank you page to redirect to qualtrics when video is done
-  import Debrief from "./pages/Debrief.svelte";
-
   // "Helper" components
   import Loading from "./components/Loading.svelte";
   import Footer from "./components/Footer.svelte";

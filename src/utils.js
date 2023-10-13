@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { initializeApp } from "firebase/app";
 import { getStorage } from "firebase/storage";
-import { getFirestore, doc, query, orderBy, addDoc, getDoc, getDocs, updateDoc, setDoc, collection, runTransaction, serverTimestamp } from "firebase/firestore";
+import { getFirestore, doc, addDoc, getDoc, updateDoc, setDoc, collection, runTransaction, serverTimestamp } from "firebase/firestore";
 import { getAuth } from 'firebase/auth';
 import { writable, get } from 'svelte/store';
 
@@ -52,16 +52,14 @@ export const userStore = writable({});
 export const groupStore = writable({});
 // Store for group messages
 export const groupMessagesStore = writable({});
-// Store for meta collection data that entails which netIds are in which groups
-export const metaStore = writable({});
+// TODO: Store for meta collection data that entails which netIds are in which groups
+// export const metaStore = writable({});
 // Another store that keeps track of whether a user is logged in or not
 export const loggedIn = writable(false);
 // And one more so we can keep track of their user id to subscribe to their collection
 export const userId = writable(null);
 // NetID
 export const netId = writable(null);
-// Episode Number
-export const epNum = writable(null);
 // Store to control the UI for what state the experiment is in
 export const stateDisplay = writable([]);
 // Store server time
@@ -71,6 +69,7 @@ export const serverTime = serverTimestamp();
 export const globalVars = {
   maxGroupSize: 4,
   minGroupSize: 2,
+  countdownTime: 5, // how many seconds to countdown before starting the experiment
   DEBUG_MODE: false,
 };
 
@@ -187,58 +186,6 @@ export const checkNetId = async (groupId, netId, epNum) => {
     throw new Error(netIdError);
   }
 };
-
-
-export const getGroupIdFromEmail = (email) => {
-  // Split the email by underscore ('_')
-  const parts = email.split('_');
-  
-  // Check if there is at least one underscore in the email
-  if (parts.length > 1) {
-    // Return the first part (text before the first underscore)
-    return parts[0];
-  } else {
-    // If there are no underscores, return the original email
-    return email;
-  }
-}
-
-export const getNetIdFromEmail = (email) => {
-  // Split the email by underscore ('_')
-  const parts = email.split('_');
-  
-  // Check if there is at least one underscore in the email
-  if (parts.length > 1) {
-    // Return the first part (text before the first underscore)
-    return parts[1];
-  } else {
-    // If there are no underscores, return the original email
-    return email;
-  }
-}
-
-export const getEpNumFromEmail = (email) => {
-  // Split the email by '@' to separate the username and domain
-  const parts = email.split('@');
-  
-  // Check if there is at least one '@' in the email
-  if (parts.length === 2) {
-    // Get the first part (username) and split it by '_' to separate the parts
-    const usernameParts = parts[0].split('_');
-    
-    // Check if there is at least one underscore in the username
-    if (usernameParts.length > 1) {
-      // Get the last part (text after the last underscore)
-      const textAfterLastUnderscore = usernameParts[usernameParts.length - 1];
-      
-      // Return the text after the last underscore and before '@'
-      return textAfterLastUnderscore;
-    }
-  }
-  
-  // If there are no underscores or '@' symbol, return an empty string
-  return '';
-}
 
 // convert time from seconds to mm:ss format
 export const formatTime = (seconds) => {
@@ -368,35 +315,22 @@ export const updateUserTimestamp = async (userId, newTimestamp) => {
   const userDocRef = doc(db, participantsCollectionName, userId);
 
   await runTransaction(db, async (transaction) => {
-      // Get the latest data, rather than relying on the store
-      const document = await transaction.get(userDocRef);
-      if (!document.exists()) {
-        throw "Document does not exist!";
-      }
-      // Freshest data
-      const { videoTime } = document.data();
+    // Get the latest data, rather than relying on the store
+    const document = await transaction.get(userDocRef);
+    if (!document.exists()) {
+      throw "Document does not exist!";
+    }
+    // Freshest data
+    const { videoTime } = document.data();
     
-      if (newTimestamp > videoTime) {
+    if (newTimestamp > videoTime) {
       // Write user's video timestamp to group doc
       await updateDoc(userDocRef, {
         videoTime: newTimestamp
       });
-  }
+    }
   });
-
-
-  
-}
-
-// Log host user's video timestamp to the group doc
-export const updateGroupTimestamp = async (groupId, userId, vidTimeStamp) => {
-  const groupDocRef = doc(db, groupsCollectionName, groupId);
-
-  // Write host user's video timestamp to group doc
-  await updateDoc(groupDocRef, {
-    videoTime: vidTimeStamp
-  });
-}
+};
 
 // Set each user's logVideoTimestamp to true
 export const setUserToLogTimestamp = async (groupMembers, logTimestampFlag) => {
@@ -410,7 +344,7 @@ export const setUserToLogTimestamp = async (groupMembers, logTimestampFlag) => {
       logVideoTimestamp: logTimestampFlag
     });
   }
-}
+};
 
 // set group new mssage to boolean cvalue
 export const setGroupToLogMsg = async (groupId, booleanValue) => {
@@ -418,7 +352,7 @@ export const setGroupToLogMsg = async (groupId, booleanValue) => {
   await updateDoc(groupDocRef, {
     newMessage: booleanValue
   });
-}
+};
 
 
 
@@ -457,7 +391,7 @@ export const queryGroupTimestamps = async (groupId, groupMembers) => {
 
   // Return the highest number in the array
   return Math.max(...videoTimes);
-}
+};
 
 
 
@@ -478,7 +412,7 @@ export const resetGroupData = async () => {
 
 };
 
-// Chat utils
+// CHAT UTILS //
 
 // Function to add a new message to the group doc
 export const addMessage = async (groupDocName, messageObj) => {
@@ -509,56 +443,6 @@ export const addMessage = async (groupDocName, messageObj) => {
       console.log(error)
     }
   }
-
-};
-
-
-
-export const getGroupMessages = async (groupId) => {
-  const groupDocRef = doc(db, groupsCollectionName, groupId);
-  const messagesCollectionRef = collection(groupDocRef, "messages");
-
-  // Query the "messages" subcollection within the group document
-  const messagesQuery = query(messagesCollectionRef, orderBy('absolute_timestamp', 'asc'));
-
-  try {
-    const querySnapshot = await getDocs(messagesQuery);
-      // Convert the query snapshot to an array of message objects
-    // const messages = [];
-    // querySnapshot.forEach((doc) => {
-    //   messages.push(doc.data());
-    // });
-    const messages = querySnapshot.docs.map((doc) => doc.data());
-    
-    // Now 'messages' contains an array of message objects from the collection
-    console.log(messages);
-
-    return messages; // Optionally, return the messages to use them elsewhere
-  } catch (error) {
-    console.error('Error getting messages:', error);
-    throw error; // Rethrow the error to handle it in the calling code
-  }
-};
-
-
-export const getRandomInt = (val) => {
-  let min = Math.ceil(1);
-  let max = Math.floor(val);
-  return Math.floor(Math.random() * (max - min) + min); // The maximum is exclusive and the minimum is inclusive
-}
-
-// Round float to nearest whole integer
-export const rounded = (val) => {
-  return Math.round(val);
-};
-
-// Rounds a float to 2 decimal places
-export const round2 = (val) => {
-  return Math.round(val * 100) / 100;
-};
-
-export const roundHalf = (val) => {
-  return Math.round(val * 2) / 2;
 };
 
 //#####################################
@@ -612,7 +496,7 @@ export const reqStateChange = async (newState) => {
         throw "Document does not exist!";
       }
       // Freshest data
-      const { counter, currentState, users, groupId, epNum } = document.data();
+      const { counter, currentState, users, groupId } = document.data();
       console.log(
         `Participant: ${userId} is requesting state change: ${currentState} -> ${newState}`
       );

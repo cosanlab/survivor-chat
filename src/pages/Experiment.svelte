@@ -20,7 +20,6 @@
     queryGroupTimestamps,
     addClientToGroup,
     getUserNameInMeta,
-    globalVars,
   } from "../utils.js";
   import {
     Player,
@@ -217,7 +216,7 @@
 
   onMount(() => {
     getUserName();
-    // Add 4th user's userId to the users field in group doc
+    // Add a given user's userId to the users field in group doc
     // so that they can call group sync function
     if (!$groupStore["users"].includes($userStore["userId"])) {
       addClientToGroupUsers();

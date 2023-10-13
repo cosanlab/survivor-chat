@@ -13,7 +13,6 @@ was just created -->
       // Delete the user Id from their computer so a new user can sign-in
       localStorage.removeItem("userId");
       $userId = null;
-      // TODO: confirm that loggedIn field in user doc is then changed to false
       $loggedIn = false;
       console.log("Sucessfully logged out of firebase");
     } catch (error) {
