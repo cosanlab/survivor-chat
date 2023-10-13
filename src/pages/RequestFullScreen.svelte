@@ -11,7 +11,7 @@
 
 <script>
   import { createEventDispatcher } from "svelte";
-  import { userId, globalVars } from "../utils.js";
+  import { globalVars, userStore } from "../utils.js";
   import Button from "../components/Button.svelte";
   import Loading from "../components/Loading.svelte";
 
@@ -32,7 +32,7 @@
 {:else}
   <div class="flex flex-col items-center justify-center h-screen">
     <h1 class="mb-4 text-3xl">Please enter fullscreen mode!</h1>
-    <h2>Hi <b>{$userId}</b>!</h2>
+    <h2>Hi <b>{$userStore["netId"]}</b>!</h2>
     <br />
     <p class="w-3/4 mb-2 text-center">
       We kindly request you to click the button below to enter fullscreen mode

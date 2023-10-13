@@ -19,7 +19,6 @@
     reqStateChange,
     reqUserStateChange,
   } from "./utils.js";
-  import LogRocket from "logrocket";
 
   // app pages and components
   import Login from "./pages/Login.svelte";
@@ -39,11 +38,6 @@
   // "Helper" components
   import Loading from "./components/Loading.svelte";
   import Footer from "./components/Footer.svelte";
-
-  LogRocket.init("cosan/survivor-2f6vd");
-  LogRocket.identify("THE_USER_ID_IN_YOUR_APP", {
-    name: $userStore["userId"],
-  });
 
   // VARIABLES USED WITHIN App.svelte
   let unsubscribe_user, unsubscribe_group, unsubscribe_group_msgs;

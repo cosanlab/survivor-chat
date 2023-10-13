@@ -15,8 +15,13 @@ It asks them to select their Group and Name/NetID.render
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
   } from "firebase/auth";
-  import { userId, checkNetId, allNetIds, netId } from "../utils";
+  import { userId, checkNetId, allNetIds, netId, userStore } from "../utils";
   import Button from "../components/Button.svelte";
+  import LogRocket from "logrocket";
+  LogRocket.init("cosan/survivor-2f6vd");
+  LogRocket.identify("THE_USER_ID_IN_YOUR_APP", {
+    name: $userStore["userId"],
+  });
 
   let groupId, epNum, loginError;
   const password = "cosanlab";
@@ -26,8 +31,11 @@ It asks them to select their Group and Name/NetID.render
     console.log("Login -- login -- netId", $netId);
     const auth = getAuth();
     let netIdForEmail = $netId;
+    // // if groupId has a space, replace it with an underscore
+    // groupId = groupId.replace(" ", "_");
     let fullId = `${groupId}_${epNum}_${netIdForEmail}`;
     let email = `${groupId}_${epNum}_${netIdForEmail}@experiment.com`;
+
     console.log("Login -- fullId", fullId);
     console.log("Login -- email", email);
 
@@ -91,12 +99,12 @@ It asks them to select their Group and Name/NetID.render
         <option value="DVBrainiac">DVBrainiac</option>
         <option value="DEV">DEV</option>
         <option value="EFD">EFD</option>
-        <option value="Freud's Favorites">Freud's Favorites</option>
-        <option value="Pavlov's Dawgs">Pavlov's Dawgs</option>
-        <option value="Psychiatric Trio">Psychiatric Trio</option>
-        <option value="Team Luke">Team Luke</option>
-        <option value="The Psychedelics">The Psychedelics</option>
-        <option value="The Unreasonable Ocho">The Unreasonable Ocho</option>
+        <option value="Freud">Freud's Favorites</option>
+        <option value="Pavlov">Pavlov's Dawgs</option>
+        <option value="Psychiatric">Psychiatric Trio</option>
+        <option value="Luke">Team Luke</option>
+        <option value="Psychedelics">The Psychedelics</option>
+        <option value="Unreasonable">The Unreasonable Ocho</option>
       </select>
     </div>
 
