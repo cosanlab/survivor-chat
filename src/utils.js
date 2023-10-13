@@ -70,7 +70,7 @@ export const serverTime = serverTimestamp();
 // Add any global variables you want to use elsewhere in the app
 export const globalVars = {
   maxGroupSize: 4,
-  minGroupSize: 3,
+  minGroupSize: 2,
   DEBUG_MODE: false,
 };
 
@@ -656,7 +656,7 @@ const verifyStateChange = async (newState) => {
       }
       // Get latest counter
       const { counter } = document.data();
-      // Want there to be at least 3 members present
+      // Want there to be at least 2 members present
       if (counter.length === globalVars.minGroupSize) {
         console.log('Last request...initiating state change');
         const obj = {};
