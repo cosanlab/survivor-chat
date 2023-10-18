@@ -262,10 +262,11 @@
               type="application/x-mpegURL"
             />
           </Hls>
+          <!-- TODO: resolve isue with how ep4 was mediaconvert'd -->
         {:else if $userStore["epNum"] == "4"}
           <Hls version="latest" config={hlsConfig} crossOrigin="anonymous">
             <source
-              data-src="https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/hls/Survivor_S28E04_Odd_One_Out_1080.m3u8"
+              data-src="https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/hls/Survivor_S28E04_Odd_One_Out_1080p.m3u8"
               type="application/x-mpegURL"
             />
           </Hls>
@@ -286,7 +287,7 @@
         {:else if $userStore["epNum"] == "7"}
           <Hls version="latest" config={hlsConfig} crossOrigin="anonymous">
             <source
-              data-src="https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/hls/Survivor_S28E07_Mad_Treasure_Hunt_720p.m3u8"
+              data-src="https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/hls/Survivor_S28E07_Mad_Treasure+_Hunt_720p.m3u8"
               type="application/x-mpegURL"
             />
           </Hls>
@@ -318,6 +319,7 @@
               type="application/x-mpegURL"
             />
           </Hls>
+          <!-- TODO: resolve issue with ep12 too -->
         {:else if $userStore["epNum"] == "12"}
           <Hls version="latest" config={hlsConfig} crossOrigin="anonymous">
             <source
@@ -325,6 +327,7 @@
               type="application/x-mpegURL"
             />
           </Hls>
+          <!-- TODO: resolve issue with 13 too -->
         {:else if $userStore["epNum"] == "13"}
           <Hls version="latest" config={hlsConfig} crossOrigin="anonymous">
             <source
@@ -332,6 +335,7 @@
               type="application/x-mpegURL"
             />
           </Hls>
+          <!-- TODO: resolve issue with 14 -->
         {:else if $userStore["epNum"] == "14"}
           <Hls version="latest" config={hlsConfig} crossOrigin="anonymous">
             <source
