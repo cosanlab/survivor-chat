@@ -225,7 +225,7 @@ export const getUserNameInMeta = async (groupId, netId, userId) => {
       break; // Exit the loop once a match is found
     }
   }
-  const firstNames = metaDocData.members_names;
+  const firstNames = metaDocData.names;
   const firstName = firstNames[netIdIdx];
 
   // Now write first name to user doc
@@ -405,19 +405,24 @@ export const updateUserTimestamp = async (userId, newTimestamp) => {
 
 // Set each user's logVideoTimestamp to true
 export const setUserToLogTimestamp = async (groupMembers, logTimestampFlag) => {
-  // Iterate through groupMembers array
-  for (let i = 0; i < groupMembers.length; i++) {
-    // Create user doc ref
-    const userDocRef = doc(db, participantsCollectionName, groupMembers[i]);
+  for (const member of groupMembers) {
+    try {
+      // Create user document reference
+      const userDocRef = doc(db, participantsCollectionName, member);
 
-    // Write host user's video timestamp to group doc
-    await updateDoc(userDocRef, {
-      logVideoTimestamp: logTimestampFlag
-    });
+      // Update the user's logVideoTimestamp flag
+      await updateDoc(userDocRef, {
+        logVideoTimestamp: logTimestampFlag
+      });
+
+      console.log(`Updated logVideoTimestamp for user: ${member}`);
+    } catch (error) {
+      console.error(`Error updating user ${member}:`, error);
+    }
   }
 };
 
-// set group new mssage to boolean cvalue
+// set group new mssage to boolean value
 export const setGroupToLogMsg = async (groupId, booleanValue) => {
   const groupDocRef = doc(db, groupsCollectionName, groupId);
   await updateDoc(groupDocRef, {
