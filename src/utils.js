@@ -84,6 +84,73 @@ export const globalVars = {
 // Options for the dropdown menu in Login.svelte
 // All NetIDs
 
+export const groupsNetIDMap = {
+  DEV: [
+    "test_user_1",
+    "test_user_2",
+    "test_user_3",
+    "test_user_4",
+  ],
+  "Minions": [
+    "f006g4d",
+    "f006j5d",
+    "f006bvh",
+  ],
+  "Teletubbies": [
+    "f005g3b",
+    "f005cp2",
+    "f005d17",
+    "f004r90",
+  ],
+  "PickleBalls": [
+    "f005fbg",
+    "f005g9v",
+    "f005g3d",
+    "f004gfx",
+  ],
+  "QuadSquad": [
+    "f0056ps",
+    "f0055kj",
+    "f005d07",
+    "f0055j3",
+  ],
+  "AutomaticJellybeans": [
+    "f005699",
+    "f004gtq",
+    "f005ckp",
+    "f005cpq",
+  ],
+  "InsideOut": [
+    "f006tx9",
+    "f006vnx",
+    "f0071fv",
+    "f0055sw",
+  ],
+  "How I Outwitted": [
+    "f005cy5",
+    "f0055p3",
+    "f0055q5",
+    "f005cp6",
+  ],
+  "HappyZappy": [
+    "f006bdj",
+    "f004gyy",
+    "f005g9x",
+    "f006bkq",
+  ],
+  "Finishers": [
+    "f00567x",
+    "f004rx5",
+    "f004qk5",
+    "f0056g0",
+  ],
+  "SADM": [
+    "f0055yy",
+    "f0056ct",
+    "f0056g4",
+  ],
+};
+
 export const allNetIds = [
   // DEV
   "test_user_1",
