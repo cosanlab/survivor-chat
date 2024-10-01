@@ -126,7 +126,7 @@ export const groupsNetIDMap = {
     "f0071fv",
     "f0055sw",
   ],
-  "How I Outwitted": [
+  "HowIOutwitted": [
     "f005cy5",
     "f0055p3",
     "f0055q5",
