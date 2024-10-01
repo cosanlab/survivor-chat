@@ -177,9 +177,13 @@ It asks them to select their Group and Name/NetID.render
 </div>
 
 {#if loginError}
-  <div class="w-full max-w-md mb-6">
-    <div class="px-8 pt-6 pb-8 mb-4 bg-white rounded shadow-md">
-      <p class="text-red-500">Error: {loginError}</p>
+  {#if loginError.code === "auth/user-not-found"}
+    Logging in...
+  {:else}
+    <div class="w-full max-w-md mb-6">
+      <div class="px-8 pt-6 pb-8 mb-4 bg-white rounded shadow-md">
+        <p class="text-red-500">Error: {loginError}</p>
+      </div>
     </div>
-  </div>
+  {/if}
 {/if}
