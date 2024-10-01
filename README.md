@@ -1,5 +1,7 @@
 # survivor-chat
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/2e539ce04dc7483b905ca77053fdb763)](https://app.codacy.com/gh/cosanlab/survivor-chat?utm_source=github.com&utm_medium=referral&utm_content=cosanlab/survivor-chat&utm_campaign=Badge_Grade)
+
 <p float="left">
     <img src="survivor-logo.webp" width="200" />
 </p>
