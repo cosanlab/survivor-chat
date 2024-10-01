@@ -20,6 +20,8 @@
     queryGroupTimestamps,
     addClientToGroup,
     getUserNameInMeta,
+    // netId,
+    // userId,
   } from "../utils.js";
   import {
     Player,
@@ -228,7 +230,7 @@
 <!-- Video & Chat Sidebar -->
 <div class="flex">
   <!-- Video -->
-  <div class="basis-1/2">
+  <div class="w-1/2">
     <div id="video_cont">
       <Player
         autoplay
@@ -371,7 +373,7 @@
   </div>
 
   <!-- Chat window -->
-  <div class="basis-1/2">
+  <div class="w-1/2 ml-4">
     <!-- Chat window -->
     <div id="chatWindow">
       <ul id="messages">
