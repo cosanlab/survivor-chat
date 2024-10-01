@@ -37,9 +37,9 @@ export const storage = getStorage();
 export const auth = getAuth();
 
 // Export the name of the collections we'll be using
-export const participantsCollectionName = 'survivor-participants';
-export const groupsCollectionName = 'survivor-groups';
-export const metaCollectionName = 'survivor-meta';
+export const participantsCollectionName = 'f24-survivor-participants';
+export const groupsCollectionName = 'f24-survivor-groups';
+export const metaCollectionName = 'f24-survivor-meta';
 //###############################################
 
 //############################
@@ -83,57 +83,61 @@ export const globalVars = {
 // but for now, too lazy so we hard-code it
 // Options for the dropdown menu in Login.svelte
 // All NetIDs
+
 export const allNetIds = [
-  // BBB
-  "f0055n5",
-  "f006c2v",
-  "f00563r",
-  "f0055n3",
   // DEV
-  "dev_test_1",
-  "dev_test_2",
-  "dev_test_3",
-  "dev_test_4",
-  // DVBrainiac
-  "f004gvv",
-  "f0055kp",
-  "f0069ys",
-  "f005cj7",
-  // EFD
-  "f005g15",
-  "f005g97",
-  "f0055k8",
-  "f005cn2",
-  // Freud's Favorites
-  "f0055q9",
-  "f005cyh",
-  "f005d1c",
-  "f005crp",
-  // Pavlov's Dawgs
-  "f004r11",
-  "f005cn4",
-  "f004rhy",
-  "f004msc",
-  // Psychiatric Trio
-  "f003xfx",
-  "f004r80",
-  "f004hd0",
-  "f004r1m",
-  // Team Luke
-  "f005cpx",
-  "f003pt8",
-  "f004p6r",
-  "f004ggx",
-  // The Psychedelics
-  "f006h88",
-  "f006bp5",
-  "f006hr8",
-  "f006b47",
-  // The Unreasonable Ocho
-  "f004hcz",
-  "f004ppp",
-  "f00560z",
-  "f003x6m"
+  "test_user_1",
+  "test_user_2",
+  "test_user_3",
+  "test_user_4",
+  // 1-the minions
+  "f006g4d",
+  "f006j5d",
+  "f006bvh",
+  // 2-Teletubbies
+  "f005g3b",
+  "f005cp2",
+  "f005d17",
+  "f004r90",
+  // 3-Pickle Balls
+  "f005fbg",
+  "f005g9v",
+  "f005g3d",
+  "f004gfx",
+  // 4-Quad Squad
+  "f0056ps",
+  "f0055kj",
+  "f005d07",
+  "f0055j3",
+  // 5-Automatic Jellybeans
+  "f005699",
+  "f004gtq",
+  "f005ckp",
+  "f005cpq",
+  // 6-Inside Out
+  "f006tx9",
+  "f006vnx",
+  "f0071fv",
+  "f0055sw",
+  // 7-How I Outwitted Your Tribe
+  "f005cy5",
+  "f0055p3",
+  "f0055q5",
+  "f005cp6",
+  // 8-Happy Zappy Neurons
+  "f006bdj",
+  "f004gyy",
+  "f005g9x",
+  "f006bkq",
+  // 9-The Finishers
+  "f00567x",
+  "f004rx5",
+  "f004qk5",
+  "f0056g0",
+  // 10-Social Affective Decision Makers
+  "f0055yy",
+  "f0056ct",
+  "f0056g4"
 ].sort();
 
 // Find corresponding first name for given netId

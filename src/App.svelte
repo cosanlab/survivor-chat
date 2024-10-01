@@ -18,6 +18,8 @@
     userId,
     reqStateChange,
     reqUserStateChange,
+    participantsCollectionName,
+    groupsCollectionName,
   } from "./utils.js";
 
   // app pages and components
@@ -131,7 +133,7 @@
         try {
           // Subscribe to their user doc
           unsubscribe_user = onSnapshot(
-            doc(db, "survivor-participants", $userId),
+            doc(db, participantsCollectionName, $userId),
             (userDoc) => {
               if (userDoc.exists()) {
                 userStore.set(userDoc.data());
@@ -145,14 +147,14 @@
                 if (groupId != "") {
                   // Also subscribe to their group doc
                   unsubscribe_group = onSnapshot(
-                    doc(db, "survivor-groups", combinedGroupIdEpNum),
+                    doc(db, groupsCollectionName, combinedGroupIdEpNum),
                     (groupDoc) => {
                       groupStore.set(groupDoc.data());
                     }
                   );
                   let groupDocRef = doc(
                     db,
-                    "survivor-groups",
+                    groupsCollectionName,
                     combinedGroupIdEpNum
                   );
                   let messagesCollectionRef = collection(
