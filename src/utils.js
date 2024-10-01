@@ -304,7 +304,7 @@ export const initUser = async (groupId, netId, epNum) => {
     }
     console.log(`'New user ${userId} successfully created with document ID ${userDocRef.id}`)
   } catch (error) {
-    console.log(`Error adding new user ${userId} doc to survivor-participants collection`);
+    console.log(`Error adding new user ${userId} doc to ${participantsCollectionName} collection`);
   }
 };
 
@@ -553,10 +553,11 @@ export const addMessage = async (groupDocName, messageObj) => {
 export const reqStateChange = async (newState) => {
   const { groupId } = get(groupStore);
   const { netId } = get(userStore);
-  const docRef = doc(db, 'survivor-groups', groupId);
+  const docRef = doc(db, groupsCollectionName, groupId);
   console.log("reqStateChange -- newState", newState);
   console.log("reqStateChange -- groupId", groupId);
   console.log("reqStateChange -- userId", userId);
+  console.log("reqStateChange -- netId", netId);
 
   try {
     await runTransaction(db, async (transaction) => {
@@ -569,9 +570,11 @@ export const reqStateChange = async (newState) => {
       // Freshest data
       const { counter, currentState, users, groupId } = document.data();
       console.log(
-        `Participant: ${userId} is requesting state change: ${currentState} -> ${newState}`
+        `Participant: ${netId} is requesting state change: ${currentState} -> ${newState}`
       );
       let fullId = `${groupId}_${netId}`;
+      console.log("fullId", fullId)
+      console.log("netId", netId)
 
       // Add the user to the counter if they're not already in it
       if (!counter.includes(netId)) {
@@ -601,7 +604,7 @@ export const reqStateChange = async (newState) => {
 // data and it will run sucdessfully 
 const verifyStateChange = async (newState) => {
   const { groupId } = get(groupStore);
-  const docRef = doc(db, 'survivor-groups', groupId);
+  const docRef = doc(db, groupsCollectionName, groupId);
   try {
     await runTransaction(db, async (transaction) => {
       // Get the latest data, rather than relying on the store
@@ -619,7 +622,7 @@ const verifyStateChange = async (newState) => {
         obj["currentState"] = newState;
         await transaction.update(docRef, obj);
       } else {
-        console.log(`Still waiting for ${3 - counter.length} requests...`);
+        console.log(`Still waiting for ${globalVars.maxGroupSize - counter.length} requests...`);
       }
     });
   } catch (error) {
@@ -631,7 +634,7 @@ const verifyStateChange = async (newState) => {
 export const reqUserStateChange = async (newState) => {
   const { userId } = get(userStore);
   console.log("Utils -- reqUserStateChange -- userId", userId);
-  const docRef = doc(db, 'survivor-participants', userId);
+  const docRef = doc(db, participantsCollectionName, userId);
 
   // update user doc
   try {
@@ -645,7 +648,7 @@ export const reqUserStateChange = async (newState) => {
       // Freshest data
       const { currentState } = document.data();
       console.log(
-        `Participant: ${userId} is requesting state change: ${currentState} -> ${newState}`
+        `Participant: ${netId} is requesting state change: ${currentState} -> ${newState}`
       );
       const data = {};
       data["currentState"] = newState;
