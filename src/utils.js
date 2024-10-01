@@ -417,7 +417,7 @@ export const setUserToLogTimestamp = async (groupMembers, logTimestampFlag) => {
 
       console.log(`Updated logVideoTimestamp for user: ${member}`);
     } catch (error) {
-      console.error(`Error updating user ${member}:`, error);
+      console.error("Error updating user:", member, error);
     }
   }
 };
