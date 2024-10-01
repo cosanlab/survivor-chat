@@ -18,7 +18,6 @@ It asks them to select their Group and Name/NetID.render
   import {
     userId,
     checkNetId,
-    allNetIds,
     groupsNetIDMap,
     netId,
     userStore,
@@ -32,7 +31,12 @@ It asks them to select their Group and Name/NetID.render
 
   console.log("groupsNetIDMap", groupsNetIDMap);
 
-  let groupId, epNum, loginError;
+  let epNum, loginError;
+  let groupId = "";
+
+  // Reactive statement to update the available NetIDs based on selected Group
+  $: availableNetIds = groupId ? groupsNetIDMap[groupId] : [];
+
   const password = "cosanlab";
   const dispatch = createEventDispatcher();
 
@@ -120,20 +124,22 @@ It asks them to select their Group and Name/NetID.render
 
     <!-- NetID Selection Drop-Down -->
     <div class="mb-4">
-      <label for="netId" class="mb-2 text-sm font-bold text-gray-700"
-        >NetID</label
-      >
+      <label for="netId" class="mb-2 text-sm font-bold text-gray-700">
+        NetID
+      </label>
       <select
         id="netId"
         name="netId"
         bind:value={$netId}
         class="w-full px-3 py-2 leading-tight border rounded shadow focus:outline-none focus:shadow-outline"
+        disabled={!groupId}
       >
         <option value="">Select your NetID</option>
-        {#each allNetIds as netId}
-          <!-- Extract the first three characters as the option value (e.g., "BBB", "DEV", etc.) -->
-          <option value={netId}>{netId}</option>
-        {/each}
+        {#if groupId}
+          {#each availableNetIds as id}
+            <option value={id}>{id}</option>
+          {/each}
+        {/if}
       </select>
     </div>
 
