@@ -29,8 +29,6 @@ It asks them to select their Group and Name/NetID.render
     name: $userStore["userId"],
   });
 
-  console.log("groupsNetIDMap", groupsNetIDMap);
-
   let epNum, loginError;
   let groupId = "";
 
@@ -178,10 +176,10 @@ It asks them to select their Group and Name/NetID.render
   </form>
 </div>
 
-<!-- {#if loginError}
+{#if loginError}
   <div class="w-full max-w-md mb-6">
     <div class="px-8 pt-6 pb-8 mb-4 bg-white rounded shadow-md">
       <p class="text-red-500">Error: {loginError}</p>
     </div>
   </div>
-{/if} -->
+{/if}
