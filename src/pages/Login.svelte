@@ -15,13 +15,22 @@ It asks them to select their Group and Name/NetID.render
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
   } from "firebase/auth";
-  import { userId, checkNetId, allNetIds, netId, userStore } from "../utils";
+  import {
+    userId,
+    checkNetId,
+    allNetIds,
+    groupsNetIDMap,
+    netId,
+    userStore,
+  } from "../utils";
   import Button from "../components/Button.svelte";
   import LogRocket from "logrocket";
   LogRocket.init("cosan/survivor-2f6vd");
   LogRocket.identify("THE_USER_ID_IN_YOUR_APP", {
     name: $userStore["userId"],
   });
+
+  console.log("groupsNetIDMap", groupsNetIDMap);
 
   let groupId, epNum, loginError;
   const password = "cosanlab";
@@ -95,16 +104,17 @@ It asks them to select their Group and Name/NetID.render
         class="w-full px-3 py-2 leading-tight border rounded shadow focus:outline-none focus:shadow-outline"
       >
         <option value="">Select your group</option>
-        <option value="BBB">BBB</option>
-        <option value="DVBrainiac">DVBrainiac</option>
         <option value="DEV">DEV</option>
-        <option value="EFD">EFD</option>
-        <option value="Freud">Freud's Favorites</option>
-        <option value="Pavlov">Pavlov's Dawgs</option>
-        <option value="Psychiatric">Psychiatric Trio</option>
-        <option value="Luke">Team Luke</option>
-        <option value="Psychedelics">The Psychedelics</option>
-        <option value="Unreasonable">The Unreasonable Ocho</option>
+        <option value="Minions">The Minions</option>
+        <option value="Teletubbies">Teletubbies</option>
+        <option value="PickleBalls">Pickle Balls</option>
+        <option value="QuadSquad">Quad Squad</option>
+        <option value="AutomaticJellybeans">Automatic Jellybeans</option>
+        <option value="InsideOut">Inside Out</option>
+        <option value="HowIOutwitted">How I Outwitted Your Tribe</option>
+        <option value="HappyZappy">Happy Zappy Neurons</option>
+        <option value="Finishers">The Finishers</option>
+        <option value="SADM">Social Affective Decision Makers</option>
       </select>
     </div>
 
