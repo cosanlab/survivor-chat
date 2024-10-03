@@ -93,7 +93,7 @@
 
   const redirectToQualtrics = () => {
     let qualtricsURL =
-      "https://dartmouth.co1.qualtrics.com/jfe/form/SV_dbWGGHYfLGhcAgS";
+      "https://dartmouth.co1.qualtrics.com/jfe/form/SV_e4I6qmxLHHgkGmG";
     location.replace(qualtricsURL);
   };
 
