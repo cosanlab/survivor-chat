@@ -35,6 +35,7 @@ It asks them to select their Group and Name/NetID.render
 
   // Reactive statement to update the available NetIDs based on selected Group
   $: availableNetIds = groupId ? groupsNetIDMap[groupId] : [];
+  $: isFormValid = groupId !== "" && $netId !== "" && epNum !== "";
 
   const password = "cosanlab";
   const dispatch = createEventDispatcher();
@@ -175,7 +176,9 @@ It asks them to select their Group and Name/NetID.render
     </div>
 
     <div class="text-center">
-      <Button type={"submit"} color={"blue"}>Login</Button>
+      {#if isFormValid}
+        <Button type={"submit"} color={"blue"}>Login</Button>
+      {/if}
     </div>
   </form>
 </div>

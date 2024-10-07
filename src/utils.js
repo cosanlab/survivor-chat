@@ -704,7 +704,7 @@ const verifyStateChange = async (newState) => {
         obj["currentState"] = newState;
         await transaction.update(docRef, obj);
       } else {
-        console.log(`Still waiting for ${globalVars.maxGroupSize - counter.length} requests...`);
+        console.log(`Still waiting for ${globalVars.minGroupSize - counter.length} requests...`);
       }
     });
   } catch (error) {

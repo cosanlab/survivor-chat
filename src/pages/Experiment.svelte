@@ -20,7 +20,7 @@
     queryGroupTimestamps,
     addClientToGroup,
     getUserNameInMeta,
-    // netId,
+    netId,
     userId,
   } from "../utils.js";
   import {
