@@ -5,7 +5,7 @@
 -->
 
 <script>
-  import { createEventDispatcher, onMount } from "svelte";
+  import { createEventDispatcher, onMount, onDestroy } from "svelte";
   import { fade } from "svelte/transition";
   import { fly } from "svelte/transition";
   import {
@@ -126,11 +126,9 @@
   };
 
   $: {
-    if ($userStore["logVideoTimestamp"] == true) {
+    if ($userStore["logVideoTimestamp"] === true) {
       makeUserUpdateTimestamp();
       getHighestTimestamp();
-
-      // set back to false
       makeUserLogTimestamp(false);
     }
 
@@ -184,19 +182,20 @@
   // then sets that to the user's video time
   // then sets the user's logVideoTimestamp to false
   const getHighestTimestamp = async () => {
-    let groupMembers = $groupStore["users"];
-    let groupId = $userStore["groupId"];
-    let highestTimestamp;
     try {
-      highestTimestamp = await queryGroupTimestamps(groupId, groupMembers);
-    } catch {
-      console.log("Experiment -- error in getHighestTimestamp");
-    }
-    console.log("Experiment -- highestTimestamp", highestTimestamp);
-    if (isNaN(highestTimestamp) || !highestTimestamp) {
-      return;
-    } else {
-      time = highestTimestamp;
+      const highestTimestamp = await queryGroupTimestamps(
+        $userStore.groupId,
+        $groupStore.users
+      );
+      console.log("Experiment -- highestTimestamp", highestTimestamp);
+      if (!isNaN(highestTimestamp) && highestTimestamp) {
+        time = highestTimestamp; // Update the bound variable
+        if (player) {
+          player.play(); // Optional: Autoplay
+        }
+      }
+    } catch (error) {
+      console.error("Error getting highest timestamp:", error);
     }
   };
 
@@ -234,15 +233,17 @@
     modalOpen = false; // close emoji menu
   };
 
-  onMount(async () => {
-    await getUserName();
-    // Add a given user's userId to the users field in group doc
-    // so that they can call group sync function
-    if (!$groupStore["users"].includes($userStore["userId"])) {
+  onMount(() => {
+    getUserName();
+    if (!$groupStore.users.includes($userStore.userId)) {
       addClientToGroupUsers();
     }
-    console.log($groupStore["users"]);
+    // Initial sync
     syncButtonPressed();
+  });
+
+  onDestroy(() => {
+    // Clean up listeners if any
   });
 </script>
 
