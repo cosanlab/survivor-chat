@@ -25,8 +25,9 @@ It asks them to select their Group and Name/NetID.render
   import Button from "../components/Button.svelte";
   import LogRocket from "logrocket";
   LogRocket.init("cosan/survivor-2f6vd");
-  LogRocket.identify("THE_USER_ID_IN_YOUR_APP", {
-    name: $userStore["userId"],
+  LogRocket.identify(`${$netId}`, {
+    name: `${$netId}`,
+    email: `${$netId}@example.com`,
   });
 
   let epNum, loginError;
