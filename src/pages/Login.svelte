@@ -61,6 +61,9 @@ It asks them to select their Group and Name/NetID.render
     localStorage.setItem("userId", $userId);
     try {
       await signInWithEmailAndPassword(auth, email, password);
+      // TODO: Refactor -- checkNetId is no longer needed
+      // since we are reactively filtering possible NetIDs based on group selection
+
       // Check if NetID is valid for that group
       // if it is, within checkNetId, we call initUser() and initGroup()
       await checkNetId(groupId, $netId, epNum);
