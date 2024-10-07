@@ -616,40 +616,62 @@ export const reqStateChange = async (newState) => {
   const docRef = doc(db, groupsCollectionName, groupId);
   console.log("reqStateChange -- newState", newState);
   console.log("reqStateChange -- groupId", groupId);
-  console.log("reqStateChange -- userId", userId);
   console.log("reqStateChange -- netId", netId);
 
   try {
+    // read transaction
     await runTransaction(db, async (transaction) => {
-
       // Get the latest data, rather than relying on the store
-      const document = await transaction.get(docRef);
-      if (!document.exists()) {
-        throw "Document does not exist!";
+      const docSnapshot = await transaction.get(docRef);
+      if (!docSnapshot.exists()) {
+        throw `Document ${docRef} does not exist!`;
       }
+
       // Freshest data
-      const { counter, currentState, users, groupId } = document.data();
+      const { counter = [], currentState, users = [], groupId } = docSnapshot.data();
+      console.log(`FRESHEST -- Counter: ${counter} | length=${counter.length}`);
+
       console.log(
         `Participant: ${netId} is requesting state change: ${currentState} -> ${newState}`
       );
       let fullId = `${groupId}_${netId}`;
-      console.log("fullId", fullId)
-      console.log("netId", netId)
+      console.log("reqStateChange -- fullId", fullId);
+      console.log("reqStateChange -- netId", netId);
+      console.log(
+        `Participant: ${netId} is requesting state change: ${currentState} -> ${newState}`
+      );
+      
+      // Update the counter and users fields in the group doc
+      const updateData = {};
+      let updated = false;
 
-      // Add the user to the counter if they're not already in it
       if (!counter.includes(netId)) {
-        transaction.update(docRef, { counter: [...counter, netId] });
+        updateData.counter = arrayUnion(netId);
+        updated = true;
       } else {
-        console.log("Ignoring duplicate request");
+        console.log("Ignoring duplicate counter request");
       }
+
       if (!users.includes(fullId)) {
-        transaction.update(docRef, { users: [...users, fullId] });
+        updateData.users = arrayUnion(fullId);
+        updated = true;
       } else {
-        console.log("Ignoring duplicate request");
+        console.log("Ignoring duplicate users request");
       }
+
+      // Update the group doc with the new data
+      if (updated) {
+        transaction.update(docRef, updateData);
+        console.log(`UPDATED -- Counter: ${counter} | length=${counter.length}`);
+      }
+
     });
   } catch (error) {
-    console.error(`Error updating state to ${newState} for group: ${groupId}`, error);
+    if (error.code === "failed-precondition") {
+      console.error(`Precondition failed`, error);
+    } else {
+      console.error(`Error updating state to ${newState} for group: ${groupId}`, error);
+    }
   }
   // Use helper function to run a second transaction that checks the counter length and
   // actually performs the state change if appropriate
@@ -668,12 +690,12 @@ const verifyStateChange = async (newState) => {
   try {
     await runTransaction(db, async (transaction) => {
       // Get the latest data, rather than relying on the store
-      const document = await transaction.get(docRef);
-      if (!document.exists()) {
+      const docSnapshot = await transaction.get(docRef);
+      if (!docSnapshot.exists()) {
         throw "Document does not exist!";
       }
       // Get latest counter
-      const { counter } = document.data();
+      const { counter } = docSnapshot.data();
       // Want there to be at least 2 members present
       if (counter.length === globalVars.minGroupSize) {
         console.log('Last request...initiating state change');
@@ -701,12 +723,12 @@ export const reqUserStateChange = async (newState) => {
     await runTransaction(db, async (transaction) => {
 
       // Get the latest data, rather than relying on the store
-      const document = await transaction.get(docRef);
-      if (!document.exists()) {
+      const docSnapshot = await transaction.get(docRef);
+      if (!docSnapshot.exists()) {
         throw "Document does not exist!";
       }
       // Freshest data
-      const { currentState } = document.data();
+      const { currentState } = docSnapshot.data();
       console.log(
         `Participant: ${netId} is requesting state change: ${currentState} -> ${newState}`
       );
@@ -731,12 +753,12 @@ export const addClientToGroup = async (groupDocName, userId) => {
     await runTransaction(db, async (transaction) => {
 
       // Get the latest data, rather than relying on the store
-      const document = await transaction.get(groupDocEpRef);
-      if (!document.exists()) {
+      const docSnapshot = await transaction.get(groupDocEpRef);
+      if (!docSnapshot.exists()) {
         throw "Document does not exist!";
       }
       // Freshest data
-      const { users } = document.data();
+      const { users } = docSnapshot.data();
 
       // Add the client's userId to the users field if they're not already in it
       if (!users.includes(userId)) {
@@ -749,7 +771,3 @@ export const addClientToGroup = async (groupDocName, userId) => {
     console.error(`Error adding userId ${userId} for group: ${groupDocName}`, error);
   }
 };
-
-
-
-
