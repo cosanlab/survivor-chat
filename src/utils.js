@@ -468,11 +468,19 @@ export const setUserToLogTimestamp = async (groupMembers, logTimestampFlag) => {
         continue; // Skip to the next member
       }
 
-      // Update the user's logVideoTimestamp flag
-      await updateDoc(userDocRef, {
-        logVideoTimestamp: logTimestampFlag
-      });
+      // Wrap in a transaction
+      await runTransaction(db, async (transaction) => {
+        // Get the latest data
+        const document = await transaction.get(userDocRef);
+        if (!document.exists()) {
+          throw new Error("Document does not exist!");
+        }
 
+        // Update the user's logVideoTimestamp flag
+        transaction.update(userDocRef, {
+          logVideoTimestamp: logTimestampFlag
+        });
+      });
       console.log(`Updated logVideoTimestamp for user: ${member}`);
     } catch (error) {
       console.error("Error updating user:", member, error.message, error.code);
@@ -613,57 +621,32 @@ export const addMessage = async (groupDocName, messageObj) => {
 export const reqStateChange = async (newState) => {
   const { groupId } = get(groupStore);
   const { netId } = get(userStore);
-  const docRef = doc(db, groupsCollectionName, groupId);
+  const groupDocRef = doc(db, groupsCollectionName, groupId);
+  const fullId = `${groupId}_${netId}`;
+
   console.log("reqStateChange -- newState", newState);
   console.log("reqStateChange -- groupId", groupId);
   console.log("reqStateChange -- netId", netId);
-
   try {
     // read transaction
     await runTransaction(db, async (transaction) => {
       // Get the latest data, rather than relying on the store
-      const docSnapshot = await transaction.get(docRef);
-      if (!docSnapshot.exists()) {
+      const groupDoc = await transaction.get(groupDocRef);
+      if (!groupDoc.exists()) {
         throw `Document ${docRef} does not exist!`;
       }
 
       // Freshest data
-      const { counter = [], currentState, users = [], groupId } = docSnapshot.data();
-      console.log(`FRESHEST -- Counter: ${counter} | length=${counter.length}`);
+      const currentCounter = groupDoc.data().counter;
+      console.log(`FRESHEST -- Counter: ${currentCounter} | length=${currentCounter.length}`);
 
       console.log(
-        `Participant: ${netId} is requesting state change: ${currentState} -> ${newState}`
+        `Participant: ${netId} is requesting state change: ${groupDoc.data().currentState} -> ${newState}`
       );
-      let fullId = `${groupId}_${netId}`;
-      console.log("reqStateChange -- fullId", fullId);
-      console.log("reqStateChange -- netId", netId);
-      console.log(
-        `Participant: ${netId} is requesting state change: ${currentState} -> ${newState}`
-      );
-      
-      // Update the counter and users fields in the group doc
-      const updateData = {};
-      let updated = false;
 
-      if (!counter.includes(netId)) {
-        updateData.counter = arrayUnion(netId);
-        updated = true;
-      } else {
-        console.log("Ignoring duplicate counter request");
-      }
-
-      if (!users.includes(fullId)) {
-        updateData.users = arrayUnion(fullId);
-        updated = true;
-      } else {
-        console.log("Ignoring duplicate users request");
-      }
-
-      // Update the group doc with the new data
-      if (updated) {
-        transaction.update(docRef, updateData);
-        console.log(`UPDATED -- Counter: ${counter} | length=${counter.length}`);
-      }
+      // Using Firebase's atomic arrayUnion() opertion ensures that we
+      // only add the user's netId to the counter and users fields if they're not already in it
+      transaction.update(groupDocRef, { counter: arrayUnion(netId), users: arrayUnion(fullId) });
 
     });
   } catch (error) {
@@ -694,17 +677,17 @@ const verifyStateChange = async (newState) => {
       if (!docSnapshot.exists()) {
         throw "Document does not exist!";
       }
+      
       // Get latest counter
-      const { counter } = docSnapshot.data();
+      const currentCounter = docSnapshot.data().counter;
+      console.log(`VERIFY -- Counter: ${currentCounter} | length=${currentCounter.length}`);
+
       // Want there to be at least 2 members present
-      if (counter.length === globalVars.minGroupSize) {
+      if (currentCounter.length === globalVars.minGroupSize) {
         console.log('Last request...initiating state change');
-        const obj = {};
-        obj["counter"] = [];
-        obj["currentState"] = newState;
-        await transaction.update(docRef, obj);
+        await transaction.update(docRef, { counter: [], currentState: newState });
       } else {
-        console.log(`Still waiting for ${globalVars.minGroupSize - counter.length} requests...`);
+        console.log(`Still waiting for ${globalVars.minGroupSize - currentCounter.length} requests...`);
       }
     });
   } catch (error) {
@@ -757,15 +740,10 @@ export const addClientToGroup = async (groupDocName, userId) => {
       if (!docSnapshot.exists()) {
         throw "Document does not exist!";
       }
-      // Freshest data
-      const { users } = docSnapshot.data();
 
       // Add the client's userId to the users field if they're not already in it
-      if (!users.includes(userId)) {
-        transaction.update(groupDocEpRef, { users: [...users, userId] });
-      } else {
-        console.log("Ignoring duplicate request");
-      }
+        transaction.update(groupDocEpRef, { users: arrayUnion(userId) });
+
     });
   } catch (error) {
     console.error(`Error adding userId ${userId} for group: ${groupDocName}`, error);

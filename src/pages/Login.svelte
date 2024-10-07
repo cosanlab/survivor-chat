@@ -23,12 +23,6 @@ It asks them to select their Group and Name/NetID.render
     userStore,
   } from "../utils";
   import Button from "../components/Button.svelte";
-  import LogRocket from "logrocket";
-  LogRocket.init("cosan/survivor-2f6vd");
-  LogRocket.identify(`${$netId}`, {
-    name: `${$netId}`,
-    email: `${$netId}@example.com`,
-  });
 
   let epNum, loginError;
   let groupId = "";

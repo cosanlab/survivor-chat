@@ -16,9 +16,9 @@
   import Loading from "../components/Loading.svelte";
   import LogRocket from "logrocket";
   LogRocket.init("cosan/survivor-2f6vd");
-  LogRocket.identify(`${$netId}`, {
-    name: `${$netId}`,
-    email: `${$netId}@example.com`,
+  LogRocket.identify($userStore["netId"], {
+    name: `${$userStore["netId"]}`,
+    email: `${$userStore["netId"]}@example.com`,
   });
   const dispatch = createEventDispatcher();
 

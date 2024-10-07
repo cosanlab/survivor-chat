@@ -175,6 +175,9 @@
   const addClientToGroupUsers = async () => {
     let groupDocName = $groupStore["groupId"];
     let userId = $userStore["userId"];
+    console.log("addClientToGroupUsers -- groupDocName", groupDocName);
+    console.log("addClientToGroupUsers -- userId", userId);
+
     await addClientToGroup(groupDocName, userId);
   };
 
@@ -235,9 +238,8 @@
 
   onMount(() => {
     getUserName();
-    if (!$groupStore.users.includes($userStore.userId)) {
-      addClientToGroupUsers();
-    }
+    addClientToGroupUsers();
+
     // Initial sync
     syncButtonPressed();
   });
