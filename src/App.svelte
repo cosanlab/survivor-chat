@@ -7,7 +7,7 @@
     query,
     orderBy,
   } from "firebase/firestore";
-  import { onMount } from "svelte";
+  import { onMount, onDestroy } from "svelte";
   import {
     auth,
     db,
@@ -93,7 +93,7 @@
 
   const redirectToQualtrics = () => {
     let qualtricsURL =
-      "https://dartmouth.co1.qualtrics.com/jfe/form/SV_dbWGGHYfLGhcAgS";
+      "https://dartmouth.co1.qualtrics.com/jfe/form/SV_e4I6qmxLHHgkGmG";
     location.replace(qualtricsURL);
   };
 
@@ -186,6 +186,19 @@
         }
       }
     });
+  });
+
+  // Clear isteners
+  onDestroy(() => {
+    if (unsubscribe_user) {
+      unsubscribe_user();
+    }
+    if (unsubscribe_group) {
+      unsubscribe_group();
+    }
+    if (unsubscribe_group_msgs) {
+      unsubscribe_group_msgs();
+    }
   });
 
   console.log(

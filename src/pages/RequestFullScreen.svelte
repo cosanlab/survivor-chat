@@ -14,7 +14,12 @@
   import { globalVars, userStore, netId } from "../utils.js";
   import Button from "../components/Button.svelte";
   import Loading from "../components/Loading.svelte";
-
+  import LogRocket from "logrocket";
+  LogRocket.init("cosan/survivor-2f6vd");
+  LogRocket.identify($userStore["netId"], {
+    name: `${$userStore["netId"]}`,
+    email: `${$userStore["netId"]}@example.com`,
+  });
   const dispatch = createEventDispatcher();
 
   let submitted = false;

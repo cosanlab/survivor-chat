@@ -4,6 +4,8 @@
     <img src="survivor-logo.webp" width="200" />
 </p>
 
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/6a942e3695d944198ecb1a0960333c95)](https://app.codacy.com/gh/cosanlab/survivor-chat/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
+
 - Server-less synchronous video-watching and chat app platform for Luke's PSYC53 class.
 - Stimuli: Survivor (Season 28)
 

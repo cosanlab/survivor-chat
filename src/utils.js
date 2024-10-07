@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { initializeApp } from "firebase/app";
 import { getStorage } from "firebase/storage";
-import { getFirestore, doc, addDoc, getDoc, updateDoc, setDoc, collection, runTransaction, serverTimestamp } from "firebase/firestore";
+import { getFirestore, doc, addDoc, getDoc, updateDoc, setDoc, collection, runTransaction, arrayRemove, arrayUnion, serverTimestamp } from "firebase/firestore";
 import { getAuth } from 'firebase/auth';
 import { writable, get } from 'svelte/store';
 
@@ -60,8 +60,6 @@ export const loggedIn = writable(false);
 export const userId = writable(null);
 // NetID
 export const netId = writable(null);
-// Store to control the UI for what state the experiment is in
-export const stateDisplay = writable([]);
 // Store server time
 export const serverTime = serverTimestamp();
 
@@ -209,55 +207,85 @@ export const allNetIds = [
 
 // Find corresponding first name for given netId
 export const getUserNameInMeta = async (groupId, netId, userId) => {
-  const metaDocRef = doc(db, metaCollectionName, `${groupId}`);
-  const metaDocSnapshot = await getDoc(metaDocRef);
-  const metaDocData = metaDocSnapshot.data(); // get doc data as an object
-  const membersMap = metaDocData.members; // get members map
-  console.log("getUserNameInMeta -- membersMap", membersMap);
-
-  // Find index of netId in members map
-  let netIdIdx = -1; // Initialize with -1 to indicate not found
-
-  // Iterate through the membersMap
-  for (const key in membersMap) {
-    if (membersMap[key] === netId) {
-      netIdIdx = key; // Set netIdIdx to the key (assuming keys are numeric indices)
-      break; // Exit the loop once a match is found
+  try {
+    const metaDocRef = doc(db, metaCollectionName, `${groupId}`);
+    const metaDocSnap = await getDoc(metaDocRef);
+    
+    if (!metaDocSnap.exists()) {
+      throw new Error(`Meta document does not exist for group: ${groupId}`);
     }
-  }
-  const firstNames = metaDocData.members_names;
-  const firstName = firstNames[netIdIdx];
 
-  // Now write first name to user doc
-  const userDocRef = doc(db, participantsCollectionName, userId);
-  await updateDoc(userDocRef, {
-    username: firstName
-  });
+    const metaDocData = metaDocSnap.data();
+    const membersMap = metaDocData.members;
+
+    console.log("getUserNameInMeta -- membersMap", membersMap);
+    console.log("getUserNameInMeta -- groupId", groupId);
+    console.log("getUserNameInMeta -- netId", netId);
+    console.log("getUserNameInMeta -- userId", userId);
+
+    // Find the index of netId in membersMap
+    let netIdIdx = -1;
+
+    for (const key in membersMap) {
+      if (membersMap[key] === netId) {
+        netIdIdx = key;
+        break;
+      }
+    }
+
+    if (netIdIdx === -1) {
+      throw new Error(`netId ${netId} not found in group ${groupId}`);
+    }
+
+    const firstNames = metaDocData.names;
+    const firstName = firstNames[netIdIdx];
+
+    if (!firstName) {
+      throw new Error(`First name not found for netId ${netId} in group ${groupId}`);
+    }
+
+    // Update the user document with the first name
+    const userDocRef = doc(db, participantsCollectionName, userId);
+    await updateDoc(userDocRef, {
+      username: firstName
+    });
+
+    console.log(`Username ${firstName} updated for user: ${userId}`);
+  } catch (error) {
+    console.error("Error in getUserNameInMeta:", error.message, error.code);
+    throw error;
+  }
 };
 
 // Check netId exists within chosen groupId
 export const checkNetId = async (groupId, netId, epNum) => {
-  const docRef = doc(db, metaCollectionName, `${groupId}`);
-  const docSnap = await getDoc(docRef);
-  const docData = docSnap.data(); // get doc data as an object
-  const membersMap = docData.members; // get members map
-  
-  // Create a computed property to combine epNum and groupId
-  let combinedGroupIdEpNum = `${groupId}_${epNum}`;
-  let membersMapValues = Object.values(membersMap);
+  try {
+    const docRef = doc(db, metaCollectionName, `${groupId}`);
+    const docSnap = await getDoc(docRef);
+    
+    if (!docSnap.exists()) {
+      throw new Error(`Meta document does not exist for group: ${groupId}`);
+    }
 
-  // check if netId exists in members map
-  if (membersMapValues.includes(netId)) {
-    console.log(`netId ${netId} is a member of ${groupId}`)
-    await initUser(groupId, netId, epNum);
-    await initGroup(combinedGroupIdEpNum, netId, epNum);
-  } else {
-    let netIdError = `netId ${netId} not a member of ${groupId}`;
-    console.log("utils -- netIdError", netIdError);
-    throw new Error(netIdError);
+    const docData = docSnap.data();
+    const membersMap = docData.members;
+    const membersMapValues = Object.values(membersMap);
+
+    if (membersMapValues.includes(netId)) {
+      console.log(`netId ${netId} is a member of ${groupId}`);
+      await initUser(groupId, netId, epNum);
+      const combinedGroupIdEpNum = `${groupId}_${epNum}`;
+      await initGroup(combinedGroupIdEpNum, netId, epNum);
+    } else {
+      const netIdError = `netId ${netId} not a member of ${groupId}`;
+      console.error("utils -- netIdError", netIdError);
+      throw new Error(netIdError);
+    }
+  } catch (error) {
+    console.error("Error in checkNetId:", error.message, error.code);
+    throw error;
   }
 };
-
 // convert time from seconds to mm:ss format
 export const formatTime = (seconds) => {
     if (isNaN(seconds)) return "...";
@@ -272,8 +300,8 @@ export const initUser = async (groupId, netId, epNum) => {
   try {
     // specify userId to include the specific group they are in and the episode number they're watching
     const userId = `${groupId}_${epNum}_${netId}`;
-    let email = `${groupId}_${epNum}_${netId}@experiment.com`;
-    let combinedGroupIdEpNum = `${groupId}_${epNum}`;
+    const email = `${groupId}_${epNum}_${netId}@experiment.com`;
+    const combinedGroupIdEpNum = `${groupId}_${epNum}`;
 
     // We could have just tried to read the value of the $userId store here, but the $
     // syntax only works in .svelte files. There's a special get() function we have to
@@ -311,36 +339,26 @@ export const initUser = async (groupId, netId, epNum) => {
 // Function to set loggedIn to false in user doc
 export const logoutUser = async (groupId, netId, epNum) => {
   try {
-    // Convert user-input netId to lowercase
     netId = netId.toLowerCase();
-    // treat userId as their email
     const userId = `${groupId}_${netId}_${epNum}`;
-
-    // We could have just tried to read the value of the $userId store here, but the $
-    // syntax only works in .svelte files. There's a special get() function we have to
-    // use instead, but because this is such simple case let's just make the userId like
-    // we do in Login.svelte and avoid the overhead.
     const userDocRef = doc(db, participantsCollectionName, userId);
 
-    // Check whether userId exists in partcipants doc first
     const userDocSnapshot = await getDoc(userDocRef);
     if (userDocSnapshot.exists()) {
-      // User doc already exists
-      console.log(`User doc already exists for ${userId}`);
-    } else {
-      // Creating new user doc
-      console.log(`Creating user doc for ${userId}...`);
-
-      // Write user doc in participations collection
+      console.log(`User doc exists for ${userId}`);
       await updateDoc(userDocRef, {
         loggedIn: false
       });
+      console.log(`User ${userId} successfully logged out.`);
+    } else {
+      console.warn(`User document does not exist for ${userId}`);
+      // Optionally, create the document if needed
     }
-    console.log(`'New user ${userId} successfully logged out with document ID ${userDocRef.id}`)
   } catch (error) {
-    console.log(`Error logging out user ${userId} doc`);
+    console.error(`Error logging out user ${userId}:`, error.message, error.code);
   }
 };
+
 
 // Function to initialize/update a new group record in the database
 // that corresponds to groupId and epNum
@@ -382,47 +400,105 @@ export const initGroup = async (groupId, netId, epNum) => {
 };
 
 // Log user's video timestamps to their user doc
+// export const updateUserTimestamp = async (userId, newTimestamp) => {
+//   const userDocRef = doc(db, participantsCollectionName, userId);
+
+//   await runTransaction(db, async (transaction) => {
+//     // Get the latest data, rather than relying on the store
+//     const document = await transaction.get(userDocRef);
+//     if (!document.exists()) {
+//       throw "Document does not exist!";
+//     }
+//     // Freshest data
+//     const { videoTime } = document.data();
+    
+//     if (newTimestamp > videoTime) {
+//       // Write user's video timestamp to group doc
+//       await updateDoc(userDocRef, {
+//         videoTime: newTimestamp
+//       });
+//     }
+//   });
+// };
+
+
 export const updateUserTimestamp = async (userId, newTimestamp) => {
+  console.log("updateUserTimestamp -- userId", userId);
+  console.log("updateUserTimestamp -- newTimestamp", newTimestamp);
+
   const userDocRef = doc(db, participantsCollectionName, userId);
 
-  await runTransaction(db, async (transaction) => {
-    // Get the latest data, rather than relying on the store
-    const document = await transaction.get(userDocRef);
-    if (!document.exists()) {
-      throw "Document does not exist!";
-    }
-    // Freshest data
-    const { videoTime } = document.data();
-    
-    if (newTimestamp > videoTime) {
-      // Write user's video timestamp to group doc
-      await updateDoc(userDocRef, {
-        videoTime: newTimestamp
-      });
-    }
-  });
-};
+  try {
+    await runTransaction(db, async (transaction) => {
+      // Get the latest data
+      const document = await transaction.get(userDocRef);
+      if (!document.exists()) {
+        throw new Error("Document does not exist!");
+      }
 
-// Set each user's logVideoTimestamp to true
-export const setUserToLogTimestamp = async (groupMembers, logTimestampFlag) => {
-  // Iterate through groupMembers array
-  for (let i = 0; i < groupMembers.length; i++) {
-    // Create user doc ref
-    const userDocRef = doc(db, participantsCollectionName, groupMembers[i]);
+      const { videoTime } = document.data();
 
-    // Write host user's video timestamp to group doc
-    await updateDoc(userDocRef, {
-      logVideoTimestamp: logTimestampFlag
+      if (newTimestamp > videoTime) {
+        transaction.update(userDocRef, {
+          videoTime: newTimestamp
+        });
+        console.log(`Transaction: Updated videoTime for user: ${userId} to ${newTimestamp}`);
+      } else {
+        console.log(`Transaction: No update needed for user: ${userId}`);
+      }
     });
+    console.log(`Transaction successfully committed for user: ${userId}`);
+  } catch (error) {
+    console.error("Transaction failed:", error.message, error.code);
   }
 };
 
-// set group new mssage to boolean cvalue
+
+// Set each user's logVideoTimestamp to true
+export const setUserToLogTimestamp = async (groupMembers, logTimestampFlag) => {
+  for (const member of groupMembers) {
+    try {
+      // Create user document reference
+      const userDocRef = doc(db, participantsCollectionName, member);
+
+      // Verify document existence before updating
+      const userDocSnap = await getDoc(userDocRef);
+      if (!userDocSnap.exists()) {
+        console.warn(`User document does not exist: ${member}`);
+        continue; // Skip to the next member
+      }
+
+      // Wrap in a transaction
+      await runTransaction(db, async (transaction) => {
+        // Get the latest data
+        const document = await transaction.get(userDocRef);
+        if (!document.exists()) {
+          throw new Error("Document does not exist!");
+        }
+
+        // Update the user's logVideoTimestamp flag
+        transaction.update(userDocRef, {
+          logVideoTimestamp: logTimestampFlag
+        });
+      });
+      console.log(`Updated logVideoTimestamp for user: ${member}`);
+    } catch (error) {
+      console.error("Error updating user:", member, error.message, error.code);
+    }
+  }
+};
+
+// set group new mssage to boolean value
 export const setGroupToLogMsg = async (groupId, booleanValue) => {
   const groupDocRef = doc(db, groupsCollectionName, groupId);
-  await updateDoc(groupDocRef, {
-    newMessage: booleanValue
-  });
+  try {
+    await updateDoc(groupDocRef, {
+      newMessage: booleanValue
+    });
+    console.log(`Set newMessage to ${booleanValue} for group: ${groupId}`);
+  } catch (error) {
+    console.error(`Error setting newMessage for group ${groupId}:`, error.message, error.code);
+  }
 };
 
 
@@ -431,37 +507,29 @@ export const setGroupToLogMsg = async (groupId, booleanValue) => {
 // then return the highest number
 // to then set the video time to that number
 // in Experiment.svelte
+
 export const queryGroupTimestamps = async (groupId, groupMembers) => {
-  // Iterate through groupMembers array
-  // and query each user's video timestamp
-  // by reading their user doc
-  // then push each video timestamp to an array
-  // then return the highest number in the array
-
-  // Create empty array to store video timestamps
-  let videoTimes = [];
-
-  // Iterate through groupMembers array
-  for (let i = 0; i < groupMembers.length; i++) {
-    // Create user doc ref
-    const userDocRef = doc(db, participantsCollectionName, groupMembers[i]);
-
-    await runTransaction(db, async (transaction) => {
-      // Get the latest data, rather than relying on the store
-      const document = await transaction.get(userDocRef);
-      if (!document.exists()) {
-        throw "Document does not exist!";
+  try {
+    const videoTimePromises = groupMembers.map(async (member) => {
+      const userDocRef = doc(db, participantsCollectionName, member);
+      const userDocSnap = await getDoc(userDocRef);
+      if (!userDocSnap.exists()) {
+        console.warn(`User document does not exist: ${member}`);
+        return 0; // Default value if document doesn't exist
       }
-      // Freshest data
-      const { videoTime } = document.data();
-      // Push user's video timestamp to videoTimes array
-      videoTimes.push(videoTime);
-
+      const { videoTime } = userDocSnap.data();
+      return videoTime || 0; // Handle undefined or null videoTime
     });
-  }
 
-  // Return the highest number in the array
-  return Math.max(...videoTimes);
+    const videoTimes = await Promise.all(videoTimePromises);
+    const highestTimestamp = Math.max(...videoTimes);
+
+    console.log("Highest video timestamp:", highestTimestamp);
+    return highestTimestamp;
+  } catch (error) {
+    console.error("Error querying group timestamps:", error.message, error.code);
+    throw error;
+  }
 };
 
 
@@ -553,43 +621,40 @@ export const addMessage = async (groupDocName, messageObj) => {
 export const reqStateChange = async (newState) => {
   const { groupId } = get(groupStore);
   const { netId } = get(userStore);
-  const docRef = doc(db, groupsCollectionName, groupId);
+  const groupDocRef = doc(db, groupsCollectionName, groupId);
+  const fullId = `${groupId}_${netId}`;
+
   console.log("reqStateChange -- newState", newState);
   console.log("reqStateChange -- groupId", groupId);
-  console.log("reqStateChange -- userId", userId);
   console.log("reqStateChange -- netId", netId);
-
   try {
+    // read transaction
     await runTransaction(db, async (transaction) => {
-
       // Get the latest data, rather than relying on the store
-      const document = await transaction.get(docRef);
-      if (!document.exists()) {
-        throw "Document does not exist!";
+      const groupDoc = await transaction.get(groupDocRef);
+      if (!groupDoc.exists()) {
+        throw `Document ${docRef} does not exist!`;
       }
-      // Freshest data
-      const { counter, currentState, users, groupId } = document.data();
-      console.log(
-        `Participant: ${netId} is requesting state change: ${currentState} -> ${newState}`
-      );
-      let fullId = `${groupId}_${netId}`;
-      console.log("fullId", fullId)
-      console.log("netId", netId)
 
-      // Add the user to the counter if they're not already in it
-      if (!counter.includes(netId)) {
-        await transaction.update(docRef, { counter: [...counter, netId] });
-      } else {
-        console.log("Ignoring duplicate request");
-      }
-      if (!users.includes(fullId)) {
-        await transaction.update(docRef, { users: [...users, fullId] });
-      } else {
-        console.log("Ignoring duplicate request");
-      }
+      // Freshest data
+      const currentCounter = groupDoc.data().counter;
+      console.log(`FRESHEST -- Counter: ${currentCounter} | length=${currentCounter.length}`);
+
+      console.log(
+        `Participant: ${netId} is requesting state change: ${groupDoc.data().currentState} -> ${newState}`
+      );
+
+      // Using Firebase's atomic arrayUnion() opertion ensures that we
+      // only add the user's netId to the counter and users fields if they're not already in it
+      transaction.update(groupDocRef, { counter: arrayUnion(netId), users: arrayUnion(fullId) });
+
     });
   } catch (error) {
-    console.error(`Error updating state to ${newState} for group: ${groupId}`, error);
+    if (error.code === "failed-precondition") {
+      console.error(`Precondition failed`, error);
+    } else {
+      console.error(`Error updating state to ${newState} for group: ${groupId}`, error);
+    }
   }
   // Use helper function to run a second transaction that checks the counter length and
   // actually performs the state change if appropriate
@@ -608,21 +673,21 @@ const verifyStateChange = async (newState) => {
   try {
     await runTransaction(db, async (transaction) => {
       // Get the latest data, rather than relying on the store
-      const document = await transaction.get(docRef);
-      if (!document.exists()) {
+      const docSnapshot = await transaction.get(docRef);
+      if (!docSnapshot.exists()) {
         throw "Document does not exist!";
       }
+      
       // Get latest counter
-      const { counter } = document.data();
+      const currentCounter = docSnapshot.data().counter;
+      console.log(`VERIFY -- Counter: ${currentCounter} | length=${currentCounter.length}`);
+
       // Want there to be at least 2 members present
-      if (counter.length === globalVars.minGroupSize) {
+      if (currentCounter.length === globalVars.minGroupSize) {
         console.log('Last request...initiating state change');
-        const obj = {};
-        obj["counter"] = [];
-        obj["currentState"] = newState;
-        await transaction.update(docRef, obj);
+        await transaction.update(docRef, { counter: [], currentState: newState });
       } else {
-        console.log(`Still waiting for ${globalVars.maxGroupSize - counter.length} requests...`);
+        console.log(`Still waiting for ${globalVars.minGroupSize - currentCounter.length} requests...`);
       }
     });
   } catch (error) {
@@ -641,12 +706,12 @@ export const reqUserStateChange = async (newState) => {
     await runTransaction(db, async (transaction) => {
 
       // Get the latest data, rather than relying on the store
-      const document = await transaction.get(docRef);
-      if (!document.exists()) {
+      const docSnapshot = await transaction.get(docRef);
+      if (!docSnapshot.exists()) {
         throw "Document does not exist!";
       }
       // Freshest data
-      const { currentState } = document.data();
+      const { currentState } = docSnapshot.data();
       console.log(
         `Participant: ${netId} is requesting state change: ${currentState} -> ${newState}`
       );
@@ -671,25 +736,16 @@ export const addClientToGroup = async (groupDocName, userId) => {
     await runTransaction(db, async (transaction) => {
 
       // Get the latest data, rather than relying on the store
-      const document = await transaction.get(groupDocEpRef);
-      if (!document.exists()) {
+      const docSnapshot = await transaction.get(groupDocEpRef);
+      if (!docSnapshot.exists()) {
         throw "Document does not exist!";
       }
-      // Freshest data
-      const { users } = document.data();
 
       // Add the client's userId to the users field if they're not already in it
-      if (!users.includes(userId)) {
-        await transaction.update(groupDocEpRef, { users: [...users, userId] });
-      } else {
-        console.log("Ignoring duplicate request");
-      }
+        transaction.update(groupDocEpRef, { users: arrayUnion(userId) });
+
     });
   } catch (error) {
     console.error(`Error adding userId ${userId} for group: ${groupDocName}`, error);
   }
 };
-
-
-
-

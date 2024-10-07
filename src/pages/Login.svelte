@@ -23,17 +23,13 @@ It asks them to select their Group and Name/NetID.render
     userStore,
   } from "../utils";
   import Button from "../components/Button.svelte";
-  import LogRocket from "logrocket";
-  LogRocket.init("cosan/survivor-2f6vd");
-  LogRocket.identify("THE_USER_ID_IN_YOUR_APP", {
-    name: $userStore["userId"],
-  });
 
   let epNum, loginError;
   let groupId = "";
 
   // Reactive statement to update the available NetIDs based on selected Group
   $: availableNetIds = groupId ? groupsNetIDMap[groupId] : [];
+  $: isFormValid = groupId !== "" && $netId !== "" && epNum !== "";
 
   const password = "cosanlab";
   const dispatch = createEventDispatcher();
@@ -60,6 +56,9 @@ It asks them to select their Group and Name/NetID.render
     localStorage.setItem("userId", $userId);
     try {
       await signInWithEmailAndPassword(auth, email, password);
+      // TODO: Refactor -- checkNetId is no longer needed
+      // since we are reactively filtering possible NetIDs based on group selection
+
       // Check if NetID is valid for that group
       // if it is, within checkNetId, we call initUser() and initGroup()
       await checkNetId(groupId, $netId, epNum);
@@ -171,7 +170,9 @@ It asks them to select their Group and Name/NetID.render
     </div>
 
     <div class="text-center">
-      <Button type={"submit"} color={"blue"}>Login</Button>
+      {#if isFormValid}
+        <Button type={"submit"} color={"blue"}>Login</Button>
+      {/if}
     </div>
   </form>
 </div>

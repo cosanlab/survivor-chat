@@ -5,7 +5,7 @@
 -->
 
 <script>
-  import { createEventDispatcher, onMount } from "svelte";
+  import { createEventDispatcher, onMount, onDestroy } from "svelte";
   import { fade } from "svelte/transition";
   import { fly } from "svelte/transition";
   import {
@@ -20,8 +20,8 @@
     queryGroupTimestamps,
     addClientToGroup,
     getUserNameInMeta,
-    // netId,
-    // userId,
+    netId,
+    userId,
   } from "../utils.js";
   import {
     Player,
@@ -97,6 +97,10 @@
     let netId = $userStore["netId"];
     let groupId = $userStore["groupId"];
     let userId = $userStore["userId"];
+    console.log("getUserName -- netId", netId);
+    console.log("getUserName -- groupId", groupId);
+    console.log("getUserName -- $userId", userId);
+
     await getUserNameInMeta(groupId, netId, userId);
   };
 
@@ -122,11 +126,9 @@
   };
 
   $: {
-    if ($userStore["logVideoTimestamp"] == true) {
+    if ($userStore["logVideoTimestamp"] === true) {
       makeUserUpdateTimestamp();
       getHighestTimestamp();
-
-      // set back to false
       makeUserLogTimestamp(false);
     }
 
@@ -142,14 +144,28 @@
   // each user should be listening for when this function is called to then call a function
   // to log their timestamp into the store
   const syncButtonPressed = async () => {
-    // Set each user in group's log timestamp to true
-    await setUserToLogTimestamp($groupStore["users"], true);
+    try {
+      console.log("Sync button pressed");
+      await setUserToLogTimestamp($groupStore["users"], true);
+      console.log("Sync button pressed: setUserToLogTimestamp completed");
+    } catch (error) {
+      console.error("Error in syncButtonPressed:", error.message, error.code);
+    }
   };
 
   // call user to update timestamp
   const makeUserUpdateTimestamp = async () => {
     console.log("Making user log timestamp:", time);
-    await updateUserTimestamp($userStore["userId"], time);
+    try {
+      await updateUserTimestamp($userStore["userId"], time);
+      console.log("makeUserUpdateTimestamp completed");
+    } catch (error) {
+      console.error(
+        "Error in makeUserUpdateTimestamp:",
+        error.message,
+        error.code
+      );
+    }
   };
 
   const makeUserLogTimestamp = async (logTimestampFlag) => {
@@ -159,6 +175,9 @@
   const addClientToGroupUsers = async () => {
     let groupDocName = $groupStore["groupId"];
     let userId = $userStore["userId"];
+    console.log("addClientToGroupUsers -- groupDocName", groupDocName);
+    console.log("addClientToGroupUsers -- userId", userId);
+
     await addClientToGroup(groupDocName, userId);
   };
 
@@ -166,19 +185,20 @@
   // then sets that to the user's video time
   // then sets the user's logVideoTimestamp to false
   const getHighestTimestamp = async () => {
-    let groupMembers = $groupStore["users"];
-    let groupId = $userStore["groupId"];
-    let highestTimestamp;
     try {
-      highestTimestamp = await queryGroupTimestamps(groupId, groupMembers);
-    } catch {
-      console.log("Experiment -- error in getHighestTimestamp");
-    }
-    console.log("Experiment -- highestTimestamp", highestTimestamp);
-    if (isNaN(highestTimestamp) || !highestTimestamp) {
-      return;
-    } else {
-      time = highestTimestamp;
+      const highestTimestamp = await queryGroupTimestamps(
+        $userStore.groupId,
+        $groupStore.users
+      );
+      console.log("Experiment -- highestTimestamp", highestTimestamp);
+      if (!isNaN(highestTimestamp) && highestTimestamp) {
+        time = highestTimestamp; // Update the bound variable
+        if (player) {
+          player.play(); // Optional: Autoplay
+        }
+      }
+    } catch (error) {
+      console.error("Error getting highest timestamp:", error);
     }
   };
 
@@ -218,12 +238,14 @@
 
   onMount(() => {
     getUserName();
-    // Add a given user's userId to the users field in group doc
-    // so that they can call group sync function
-    if (!$groupStore["users"].includes($userStore["userId"])) {
-      addClientToGroupUsers();
-    }
+    addClientToGroupUsers();
+
+    // Initial sync
     syncButtonPressed();
+  });
+
+  onDestroy(() => {
+    // Clean up listeners if any
   });
 </script>
 
