@@ -9,7 +9,7 @@
      * `import type` instead of `import` for Types.
      */
     "ignoreDeprecations": "5.0",
-    "importsNotUsedAsValues": "error",
+    "verbatimModuleSyntax": true,
     "isolatedModules": true,
     "resolveJsonModule": true,
     /**
