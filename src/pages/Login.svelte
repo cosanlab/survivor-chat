@@ -106,16 +106,16 @@ It asks them to select their Group and Name/NetID.render
       >
         <option value="">Select your group</option>
         <option value="DEV">DEV</option>
-        <option value="Minions">The Minions</option>
-        <option value="Teletubbies">Teletubbies</option>
+        <option value="AutomaticJellybeans">Automatic Jellybeans</option>
+        <option value="HappyZappy">Happy Zappy Neurons</option>
+        <option value="HowIOutwitted">How I Outwitted Your Tribe</option>
+        <option value="InsideOut">Inside Out</option>
         <option value="PickleBalls">Pickle Balls</option>
         <option value="QuadSquad">Quad Squad</option>
-        <option value="AutomaticJellybeans">Automatic Jellybeans</option>
-        <option value="InsideOut">Inside Out</option>
-        <option value="HowIOutwitted">How I Outwitted Your Tribe</option>
-        <option value="HappyZappy">Happy Zappy Neurons</option>
-        <option value="Finishers">The Finishers</option>
+        <option value="Teletubbies">Teletubbies</option>
         <option value="SADM">Social Affective Decision Makers</option>
+        <option value="Finishers">The Finishers</option>
+        <option value="Minions">The Minions</option>
       </select>
     </div>
 
