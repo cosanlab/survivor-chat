@@ -290,7 +290,7 @@
         {:else if $userStore["epNum"] == "4"}
           <Hls version="latest" config={hlsConfig} crossOrigin="anonymous">
             <source
-              data-src="https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/hls/Survivor_S28E04_Odd_One_Out_1080p.m3u8"
+              data-src="https://svelte-vid-sync-chat-app-public.s3.amazonaws.com/survivor/hls/Survivor_S28E04_Odd_One_Out_1080_H264_QBVR.m3u8"
               type="application/x-mpegURL"
             />
           </Hls>
